@@ -1,0 +1,222 @@
+[
+  {
+    "id": "pop_4chord",
+    "name": "Pop 4-Chord (I-V-vi-IV)",
+    "key": "C",
+    "chords": ["Cmaj", "Gmaj", "Amin", "Fmaj"],
+    "beatsPerChord": 4,
+    "tempo": 120,
+    "style": "Pop",
+    "strumPatternId": "pop_rock"
+  },
+  {
+    "id": "50s_doowop",
+    "name": "50s Doo-Wop (I-vi-IV-V)",
+    "key": "C",
+    "chords": ["Cmaj", "Amin", "Fmaj", "Gmaj"],
+    "beatsPerChord": 4,
+    "tempo": 110,
+    "style": "Oldies",
+    "strumPatternId": "basic"
+  },
+  {
+    "id": "jazz_251",
+    "name": "Jazz Standard (ii-V-I)",
+    "key": "C",
+    "chords": ["Dmin7", "G7", "Cmaj7", "A7"],
+    "beatsPerChord": 4,
+    "tempo": 128,
+    "style": "Jazz",
+    "strumPatternId": "swing"
+  },
+  {
+    "id": "classic_rock_145",
+    "name": "Classic 3-Chord (I-IV-V-IV)",
+    "key": "G",
+    "chords": ["Gmaj", "Cmaj", "Dmaj", "Cmaj"],
+    "beatsPerChord": 4,
+    "tempo": 125,
+    "style": "Rock",
+    "strumPatternId": "pop_rock"
+  },
+  {
+    "id": "sensitive_female",
+    "name": "Emotional Pop (vi-IV-I-V)",
+    "key": "C",
+    "chords": ["Amin", "Fmaj", "Cmaj", "Gmaj"],
+    "beatsPerChord": 4,
+    "tempo": 105,
+    "style": "Pop Ballad",
+    "strumPatternId": "ballad"
+  },
+  {
+    "id": "epic_minor",
+    "name": "Epic Minor Hero (i-bVI-bIII-bVII)",
+    "key": "Am",
+    "chords": ["Amin", "Fmaj", "Cmaj", "Gmaj"],
+    "beatsPerChord": 4,
+    "tempo": 130,
+    "style": "Cinematic",
+    "strumPatternId": "pop_rock"
+  },
+  {
+    "id": "jazz_turnaround",
+    "name": "Rhythm Changes (I-vi-ii-V)",
+    "key": "C",
+    "chords": ["Cmaj7", "Amin7", "Dmin7", "G7"],
+    "beatsPerChord": 4,
+    "tempo": 140,
+    "style": "Jazz Swing",
+    "strumPatternId": "swing"
+  },
+  {
+    "id": "andalusian_cadence",
+    "name": "Andalusian Cadence (i-VII-VI-V)",
+    "key": "Am",
+    "chords": ["Amin", "Gmaj", "Fmaj", "Emaj"],
+    "beatsPerChord": 4,
+    "tempo": 115,
+    "style": "Flamenco",
+    "strumPatternId": "basic"
+  },
+  {
+    "id": "blues_12bar_c",
+    "name": "12-Bar Blues in C",
+    "key": "C",
+    "chords": ["C7", "F7", "C7", "G7", "F7", "C7"],
+    "beatsPerChord": 4,
+    "tempo": 110,
+    "style": "Blues",
+    "strumPatternId": "swing"
+  },
+  {
+    "id": "blues_12bar_e",
+    "name": "Delta Blues in E",
+    "key": "E",
+    "chords": ["E7", "A7", "E7", "B7", "A7", "E7"],
+    "beatsPerChord": 4,
+    "tempo": 96,
+    "style": "Delta Blues",
+    "strumPatternId": "slow_rock"
+  },
+  {
+    "id": "pachelbel_canon",
+    "name": "Pachelbel Canon",
+    "key": "D",
+    "chords": ["Dmaj", "Amaj", "Bmin", "F#min", "Gmaj", "Dmaj", "Amaj"],
+    "beatsPerChord": 4,
+    "tempo": 84,
+    "style": "Classical",
+    "strumPatternId": "ballad"
+  },
+  {
+    "id": "mixolydian_anthem",
+    "name": "Mixolydian Rock (I-bVII-IV-I)",
+    "key": "C",
+    "chords": ["Cmaj", "A#maj", "Fmaj", "Cmaj"],
+    "beatsPerChord": 4,
+    "tempo": 118,
+    "style": "Classic Rock",
+    "strumPatternId": "pop_rock"
+  },
+  {
+    "id": "dorado_dorian",
+    "name": "Dorian Folk (i-IV-i-IV)",
+    "key": "Am",
+    "chords": ["Amin", "Dmaj", "Amin", "Dmaj"],
+    "beatsPerChord": 4,
+    "tempo": 112,
+    "style": "Folk",
+    "strumPatternId": "basic"
+  },
+  {
+    "id": "circle_progression",
+    "name": "Circle Progression (vi-ii-V-I)",
+    "key": "C",
+    "chords": ["Amin", "Dmin", "Gmaj", "Cmaj"],
+    "beatsPerChord": 4,
+    "tempo": 100,
+    "style": "Acoustic",
+    "strumPatternId": "basic"
+  },
+  {
+    "id": "beatles_major_minor",
+    "name": "Romantic IV-iv (I-iii-IV-iv)",
+    "key": "C",
+    "chords": ["Cmaj", "Emin", "Fmaj", "Fmin"],
+    "beatsPerChord": 4,
+    "tempo": 92,
+    "style": "Vintage Pop",
+    "strumPatternId": "ballad"
+  },
+  {
+    "id": "island_reggae_groove",
+    "name": "Island Sunshine (I-IV-V-IV)",
+    "key": "C",
+    "chords": ["Cmaj", "Fmaj", "Gmaj", "Fmaj"],
+    "beatsPerChord": 4,
+    "tempo": 104,
+    "style": "Reggae / Island",
+    "strumPatternId": "island"
+  },
+  {
+    "id": "reggae_minor",
+    "name": "Reggae Skank (i-v-iv-v)",
+    "key": "Am",
+    "chords": ["Amin", "Emin", "Dmin", "Emin"],
+    "beatsPerChord": 4,
+    "tempo": 90,
+    "style": "Roots Reggae",
+    "strumPatternId": "reggae"
+  },
+  {
+    "id": "waltz_ballad",
+    "name": "Tennessee Waltz (I-IV-I-V)",
+    "key": "G",
+    "chords": ["Gmaj", "Cmaj", "Gmaj", "Dmaj"],
+    "beatsPerChord": 3,
+    "tempo": 108,
+    "style": "Waltz",
+    "strumPatternId": "waltz"
+  },
+  {
+    "id": "neo_soul_cadence",
+    "name": "Neo-Soul Groove (i7-iv7-bVII7-bIIImaj7)",
+    "key": "Am",
+    "chords": ["Amin7", "Dmin7", "G7", "Cmaj7"],
+    "beatsPerChord": 4,
+    "tempo": 88,
+    "style": "Neo-Soul",
+    "strumPatternId": "slow_rock"
+  },
+  {
+    "id": "secondary_dominant",
+    "name": "Secondary Dominant (I-V/vi-vi-IV)",
+    "key": "C",
+    "chords": ["Cmaj", "E7", "Amin", "Fmaj"],
+    "beatsPerChord": 4,
+    "tempo": 116,
+    "style": "Pop",
+    "strumPatternId": "pop_rock"
+  },
+  {
+    "id": "country_twang",
+    "name": "Country Bluegrass (I-IV-I-V)",
+    "key": "G",
+    "chords": ["Gmaj", "Cmaj", "Gmaj", "D7"],
+    "beatsPerChord": 4,
+    "tempo": 136,
+    "style": "Country",
+    "strumPatternId": "basic"
+  },
+  {
+    "id": "jazz_minor_ballad",
+    "name": "Minor Turnaround (i-iv-iiø-V7)",
+    "key": "Am",
+    "chords": ["Amin7", "Dmin7", "Bm7b5", "E7"],
+    "beatsPerChord": 4,
+    "tempo": 76,
+    "style": "Jazz Ballad",
+    "strumPatternId": "slow_rock"
+  }
+]

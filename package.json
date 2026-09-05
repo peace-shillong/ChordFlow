@@ -1,0 +1,14 @@
+{
+  "name": "chordflow",
+  "version": "1.0.0",
+  "description": "Chord Previewer & Progression Builder SPA",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "serve": "npx -y serve ."
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3"
+  }
+}

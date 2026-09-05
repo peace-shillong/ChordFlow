@@ -1,0 +1,58 @@
+[
+  {
+    "id": "basic",
+    "name": "Basic Down-Up",
+    "pattern": ["D", "", "D", "U", "D", "", "D", "U"],
+    "accent": [0, 4],
+    "bpm": 100
+  },
+  {
+    "id": "pop_rock",
+    "name": "Pop / Rock Drive",
+    "pattern": ["D", "", "D", "U", "", "U", "D", "U"],
+    "accent": [0, 4, 6],
+    "bpm": 120
+  },
+  {
+    "id": "island",
+    "name": "Island / Calypso",
+    "pattern": ["D", "", "D", "U", "", "U", "D", ""],
+    "accent": [0, 2, 5],
+    "bpm": 115
+  },
+  {
+    "id": "ballad",
+    "name": "Folk / Ballad",
+    "pattern": ["D", "", "", "", "D", "", "D", "U"],
+    "accent": [0, 4],
+    "bpm": 80
+  },
+  {
+    "id": "reggae",
+    "name": "Reggae Offbeat",
+    "pattern": ["", "U", "", "U", "", "U", "", "U"],
+    "accent": [1, 3, 5, 7],
+    "bpm": 90
+  },
+  {
+    "id": "swing",
+    "name": "Jazz Swing",
+    "pattern": ["D", "", "D", "U", "D", "", "D", "U"],
+    "accent": [0, 2, 4, 6],
+    "bpm": 130
+  },
+  {
+    "id": "waltz",
+    "name": "3/4 Waltz",
+    "pattern": ["D", "", "D", "", "D", ""],
+    "accent": [0],
+    "bpm": 108
+  },
+  {
+    "id": "slow_rock",
+    "name": "6/8 Slow Rock / Soul",
+    "pattern": ["D", "D", "D", "D", "D", "D"],
+    "accent": [0, 3],
+    "bpm": 72
+  }
+]

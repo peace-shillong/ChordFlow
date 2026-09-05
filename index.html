@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ChordFlow — Chord Previewer & Progression Builder</title>
+  <meta name="description" content="A minimalist, modern Web Audio SPA for previewing chords across Piano, Guitar, Ukulele, and Harmonica, building chord progressions, and exploring music theory.">
+  <meta name="theme-color" content="#0b0d17">
+
+  <link rel="stylesheet" href="css/main.css">
+  
+  <!-- jsPDF CDN for single-script printable PDF export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+  <!-- Loading Screen -->
+  <div id="loading-overlay" aria-live="polite">
+    <div class="spinner"></div>
+    <div style="font-weight: 700; font-size: 18px; letter-spacing: -0.3px;">Loading ChordFlow...</div>
+  </div>
+
+  <div id="app" class="app-root mode-clean">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="brand-container">
+        <span class="brand-logo" role="img" aria-label="ChordFlow Logo">🎵</span>
+        <h1 class="brand-title">ChordFlow</h1>
+      </div>
+
+      <div class="header-actions">
+        <!-- Mode Switcher (Clean vs Advanced) -->
+        <div class="mode-segmented-control" role="tablist" aria-label="App Mode">
+          <button class="mode-tab active" data-mode="clean" role="tab" aria-selected="true" id="tab-clean-mode">
+            Clean (Beginner)
+          </button>
+          <button class="mode-tab" data-mode="advanced" role="tab" aria-selected="false" id="tab-advanced-mode">
+            Advanced (Theory)
+          </button>
+        </div>
+
+        <!-- Theme Toggle -->
+        <button id="btn-theme-toggle" class="icon-btn" title="Toggle Theme" aria-label="Toggle Dark/Light Theme">
+          🌙
+        </button>
+      </div>
+    </header>
+
+    <!-- Instrument Segmented Navigation -->
+    <nav class="instrument-nav" aria-label="Select Instrument">
+      <div class="instrument-tabs-container" role="tablist">
+        <button class="instrument-tab active" data-instrument="guitar" role="tab" aria-selected="true">
+          🎸 Guitar
+        </button>
+        <button class="instrument-tab" data-instrument="piano" role="tab" aria-selected="false">
+          🎹 Piano
+        </button>
+        <button class="instrument-tab" data-instrument="ukulele" role="tab" aria-selected="false">
+          🪕 Ukulele
+        </button>
+        <button class="instrument-tab" data-instrument="harmonica" role="tab" aria-selected="false">
+          🌬️ Harmonica
+        </button>
+      </div>
+    </nav>
+
+    <!-- Main Content Area: 3-Column Layout (Library Left | Progression Middle | Diagram Right) -->
+    <main class="app-main">
+      <div class="app-main-grid-3col">
+        <!-- Left Column: Chord Library & Search -->
+        <aside class="col-library" aria-label="Chord Library">
+          <section class="glass-panel library-section">
+            <div class="panel-header">
+              <h3 class="panel-title">📚 Chord Library</h3>
+            </div>
+
+            <div class="filter-bar">
+              <!-- Search Box -->
+              <div class="search-input-wrapper">
+                <span class="search-icon">🔍</span>
+                <input type="text" id="chord-search-input" class="search-input" placeholder="Search chord (e.g. Am, F#7, Ddim)..." aria-label="Search Chords">
+              </div>
+
+              <!-- Root Filter Pills -->
+              <div id="root-filter-container" class="root-pills-container" role="toolbar" aria-label="Filter by Root Note"></div>
+
+              <!-- Quality Filter Dropdown -->
+              <div class="filter-row">
+                <select id="quality-filter-select" class="custom-select" style="width: 100%;" aria-label="Filter by Chord Quality">
+                  <option value="all">All Qualities</option>
+                  <option value="major">Major</option>
+                  <option value="minor">Minor</option>
+                  <option value="7th">Dominant 7th</option>
+                  <option value="maj7">Major 7th</option>
+                  <option value="min7">Minor 7th</option>
+                  <option value="dim">Diminished</option>
+                  <option value="dim7">Diminished 7th</option>
+                  <option value="aug">Augmented</option>
+                  <option value="sus2">Sus2</option>
+                  <option value="sus4">Sus4</option>
+                  <option value="add9">Add9</option>
+                  <option value="m7b5">Half-Diminished (m7b5)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Scrollable Chord Cards Grid -->
+            <div id="chord-library-grid" class="chord-grid" role="grid" aria-label="Available Chords"></div>
+          </section>
+        </aside>
+
+        <!-- Middle Column: Chord Progression Viewer & Builder -->
+        <div class="col-progression">
+          <!-- Progression Builder Area -->
+          <section class="glass-panel progression-section" aria-label="Chord Progression Builder">
+            <div class="panel-header">
+              <h3 class="panel-title">🎼 Chord Progression (4–7 Chords)</h3>
+              <select id="preset-progression-select" class="custom-select" aria-label="Load Sample Progression"></select>
+            </div>
+
+            <!-- "Next Chord" Indicator Banner -->
+            <div id="next-chord-preview" class="next-chord-banner" aria-live="polite">
+              <span class="next-badge">Next →</span>
+              <span class="next-symbol">G</span>
+              <span class="next-name">G Major</span>
+            </div>
+
+            <!-- Horizontal Progression Cards Strip -->
+            <div class="progression-strip-wrapper">
+              <div id="progression-cards-strip" class="progression-cards-strip" role="list"></div>
+            </div>
+
+            <!-- Playback Control Bar -->
+            <div class="playback-controls-bar">
+              <div class="playback-buttons">
+                <button id="btn-play-progression" class="play-toggle-btn" aria-label="Play or Pause Progression">
+                  <span class="btn-icon">▶</span>
+                  <span>Play Progression</span>
+                </button>
+                <button id="btn-stop-progression" class="icon-btn" title="Stop" aria-label="Stop Progression">
+                  ⏹
+                </button>
+                <button id="btn-toggle-loop" class="icon-btn active" title="Toggle Loop" aria-label="Toggle Loop">
+                  🔁
+                </button>
+                <button id="btn-toggle-metronome" class="icon-btn active" title="Toggle Metronome" aria-label="Toggle Metronome">
+                  ⏱
+                </button>
+                <div id="metronome-pulse-indicator" class="metro-indicator" title="Beat Metronome Pulse"></div>
+              </div>
+
+              <div class="tempo-control-group">
+                <label for="tempo-slider" class="control-label">Tempo:</label>
+                <input type="range" id="tempo-slider" class="tempo-slider" min="40" max="240" value="120" aria-label="Tempo Slider">
+                <span id="tempo-value-display" class="tempo-value">120 BPM</span>
+                <button id="btn-tap-tempo" class="small-btn" title="Tap repeatedly to set tempo">Tap</button>
+              </div>
+            </div>
+
+            <!-- Strum Visualizer Ticker (Advanced Mode) -->
+            <div id="strum-visualizer-ticker" class="strum-visualizer-container" style="display: none;" aria-label="Strumming Rhythm Visualizer"></div>
+          </section>
+
+          <!-- Advanced Controls Bar (Capo, Tuning, Strum Pattern) -->
+          <section id="advanced-controls-bar" class="glass-panel" style="display: none;" aria-label="Instrument & Strum Settings">
+            <div class="panel-header">
+              <h3 class="panel-title">⚙️ Instrument & Strum Settings</h3>
+            </div>
+
+            <div class="controls-row">
+              <!-- Capo Slider -->
+              <div id="capo-control-group" class="control-group">
+                <label for="capo-slider" class="control-label">Capo:</label>
+                <input type="range" id="capo-slider" min="0" max="6" value="0" style="width: 90px; accent-color: var(--accent);">
+                <span id="capo-value-display" class="tempo-value" style="min-width: 60px;">None (0)</span>
+              </div>
+
+              <!-- Tuning Select -->
+              <div class="control-group">
+                <label for="tuning-select" class="control-label">Tuning:</label>
+                <select id="tuning-select" class="custom-select"></select>
+              </div>
+
+              <!-- Strum Pattern Select -->
+              <div class="control-group">
+                <label for="strum-pattern-select" class="control-label">Strum Pattern:</label>
+                <select id="strum-pattern-select" class="custom-select"></select>
+              </div>
+            </div>
+          </section>
+
+          <!-- Advanced Theory Settings Drawer -->
+          <section id="advanced-settings-drawer" class="glass-panel" style="display: none;" aria-label="Music Theory Settings">
+            <div class="panel-header">
+              <h3 class="panel-title">🧠 Music Theory Overlays</h3>
+            </div>
+
+            <div class="advanced-settings-panel">
+              <label class="toggle-label">
+                <input type="checkbox" id="toggle-notes" checked>
+                <span>Show Note Names on Diagram</span>
+              </label>
+              <label class="toggle-label">
+                <input type="checkbox" id="toggle-intervals">
+                <span>Show Interval Numbers (1, 3, 5, 7)</span>
+              </label>
+              <label class="toggle-label">
+                <input type="checkbox" id="toggle-scale-degrees" checked>
+                <span>Show Scale Degrees (I, ii, V, vi…)</span>
+              </label>
+              <label class="toggle-label">
+                <input type="checkbox" id="toggle-strum" checked>
+                <span>Show Strumming Pattern Ticker</span>
+              </label>
+              <label class="toggle-label">
+                <input type="checkbox" id="toggle-circle" checked>
+                <span>Show Circle of Fifths Widget</span>
+              </label>
+              <label class="toggle-label">
+                <input type="checkbox" id="toggle-inversions" checked>
+                <span>Show Chord Inversions Selector</span>
+              </label>
+            </div>
+          </section>
+
+          <!-- Interactive Circle of Fifths Section -->
+          <section id="circle-section" class="glass-panel" style="display: none;" aria-label="Interactive Circle of Fifths">
+            <div class="panel-header">
+              <h3 class="panel-title">⭕ Interactive Circle of Fifths</h3>
+            </div>
+            <div id="circle-of-fifths-container"></div>
+          </section>
+        </div>
+
+        <!-- Right Column: Active Chord Preview & Diagram -->
+        <aside class="col-diagram" aria-label="Active Chord Diagram">
+          <section class="glass-panel chord-preview-section" aria-labelledby="active-chord-title">
+            <div class="chord-info-banner">
+              <h2 id="active-chord-title" class="active-chord-title">C</h2>
+              <div id="active-chord-subtitle" class="active-chord-subtitle">C Major</div>
+              <div id="active-chord-notes" class="active-chord-notes">Notes: C4 - E4 - G4</div>
+            </div>
+
+            <!-- Inversions (Advanced Mode) -->
+            <div id="inversion-pills-container" class="inversion-pills" style="display: none;"></div>
+
+            <!-- Canvas Diagram Container -->
+            <div class="canvas-wrapper">
+              <canvas id="main-diagram-canvas" width="340" height="260" aria-label="Interactive Chord Diagram"></canvas>
+            </div>
+
+            <!-- Play Active Chord Button -->
+            <div class="preview-actions">
+              <button id="btn-play-active-chord" class="primary-btn" aria-label="Play Selected Chord">
+                <span class="btn-icon">🔊</span>
+                <span>Play Chord</span>
+              </button>
+            </div>
+          </section>
+        </aside>
+      </div>
+    </main>
+
+    <!-- Footer with Export & Import -->
+    <footer class="app-footer">
+      <div class="footer-content">
+        <div class="export-actions-group">
+          <button id="btn-export-json" class="export-btn" title="Download progression as JSON">
+            <span>💾</span> JSON
+          </button>
+          <button id="btn-export-png" class="export-btn" title="Download chord chart as high-resolution PNG">
+            <span>🖼️</span> PNG Image
+          </button>
+          <button id="btn-export-pdf" class="export-btn" title="Generate printable PDF sheet">
+            <span>📄</span> Printable PDF
+          </button>
+          <button id="btn-import-json" class="export-btn" title="Import progression JSON file">
+            <span>📂</span> Import JSON
+          </button>
+          <input type="file" id="json-file-input" accept=".json" style="display: none;">
+        </div>
+
+        <div class="footer-hints">
+          <span>Shortcuts: <kbd>Space</kbd> Play/Pause • <kbd>Enter</kbd> Play Chord • <kbd>←/→</kbd> Step</span>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- Main ES Module Script -->
+  <script type="module" src="dist/main.js"></script>
+</body>
+</html>
