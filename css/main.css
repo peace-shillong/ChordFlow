@@ -304,11 +304,11 @@ button {
 }
 
 /* ==========================================================================
-   Main Layout Grid (Mobile-First)
+   Main Layout Grid (3-Column Layout: Library Left | Progression Middle | Diagram Right)
    ========================================================================== */
 
 .app-main {
-  max-width: 1320px;
+  max-width: 1540px;
   margin: 0 auto;
   padding: 16px;
   display: flex;
@@ -316,19 +316,79 @@ button {
   gap: 20px;
 }
 
-@media (min-width: 900px) {
-  .app-main-grid {
-    display: grid;
-    grid-template-columns: 380px 1fr;
-    gap: 24px;
-    align-items: start;
+.app-main-grid-3col {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.col-library,
+.col-progression,
+.col-diagram {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Mobile Viewport (< 768px): Diagram Preview -> Progression -> Library */
+@media (max-width: 767px) {
+  .col-diagram {
+    order: 1;
+  }
+  .col-progression {
+    order: 2;
+  }
+  .col-library {
+    order: 3;
   }
 }
 
-@media (min-width: 1200px) {
-  .app-main-grid {
-    grid-template-columns: 400px 1fr;
-    gap: 28px;
+/* Tablet / Medium Viewports (768px - 1149px): 2 Columns */
+@media (min-width: 768px) and (max-width: 1149px) {
+  .app-main-grid-3col {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 20px;
+    align-items: start;
+  }
+  .col-progression {
+    grid-column: 1;
+  }
+  .col-diagram {
+    grid-column: 2;
+  }
+  .col-library {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Desktop Viewports (≥ 1150px): Full 3-Column Layout */
+@media (min-width: 1150px) {
+  .app-main-grid-3col {
+    display: grid;
+    grid-template-columns: 300px minmax(460px, 1fr) 350px;
+    gap: 22px;
+    align-items: start;
+  }
+
+  .col-library {
+    position: sticky;
+    top: 80px;
+  }
+
+  .col-library .library-section {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .col-library .chord-grid {
+    flex: 1;
+    max-height: 520px;
+  }
+
+  .col-diagram {
+    position: sticky;
+    top: 80px;
   }
 }
 
