@@ -994,6 +994,87 @@ button {
 }
 
 /* ==========================================================================
+   Chord Library Progression Generator Box
+   ========================================================================== */
+
+.library-generator-box {
+  margin-top: 14px;
+  padding: 14px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(236, 72, 153, 0.1) 100%);
+  border: 1px solid var(--border-active);
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.generator-box-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.2px;
+}
+
+.generator-icon {
+  font-size: 15px;
+}
+
+.generator-target-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.generator-target-badge {
+  font-weight: 700;
+  color: var(--accent-light);
+  background: rgba(99, 102, 241, 0.2);
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-active);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.generator-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.generator-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 14px;
+  min-height: 42px;
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, var(--accent) 0%, var(--secondary) 100%);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow: 0 4px 14px var(--accent-glow);
+  transition: var(--transition);
+  margin-top: 4px;
+}
+
+.generator-action-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px var(--accent-glow);
+}
+
+.generator-action-btn:active {
+  transform: scale(0.97);
+}
+
+/* ==========================================================================
    Advanced Mode Settings & Toggles
    ========================================================================== */
 

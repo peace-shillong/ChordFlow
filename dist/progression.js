@@ -74,9 +74,22 @@ export class ProgressionManager {
             return false; // Spec: 4-7 chords
         }
         this.chords.push(chordId);
+        this.activeIndex = this.chords.length - 1;
         this.saveToStorage();
         this.notifyListChange();
+        this.notifyChordChange();
         return true;
+    }
+    setChordAt(index, chordId) {
+        if (index >= 0 && index < this.chords.length) {
+            this.chords[index] = chordId;
+            this.activeIndex = index;
+            this.saveToStorage();
+            this.notifyListChange();
+            this.notifyChordChange();
+            return true;
+        }
+        return false;
     }
     removeChord(index) {
         if (this.chords.length <= 1) {

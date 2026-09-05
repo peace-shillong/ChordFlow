@@ -105,6 +105,26 @@
 
             <!-- Scrollable Chord Cards Grid -->
             <div id="chord-library-grid" class="chord-grid" role="grid" aria-label="Available Chords"></div>
+
+            <!-- Progression Generator from Selected Chord -->
+            <div class="library-generator-box" aria-label="Auto-Generate Progression">
+              <div class="generator-box-header">
+                <span class="generator-icon">✨</span>
+                <span class="generator-title">Auto-Generate Progression</span>
+              </div>
+              <div class="generator-target-info">
+                <span class="generator-target-label">Root / 1st Chord:</span>
+                <span id="generator-target-chord" class="generator-target-badge">C Major (C)</span>
+              </div>
+              <div class="generator-controls">
+                <label for="generator-style-select" class="control-label" style="font-size: 11px;">Style / Formula:</label>
+                <select id="generator-style-select" class="custom-select" style="width: 100%; font-size: 12px; padding: 7px 10px;"></select>
+                <button id="btn-generate-progression" class="generator-action-btn" title="Generate Chord Progression starting on selected chord">
+                  <span>⚡</span>
+                  <span>Generate Progression</span>
+                </button>
+              </div>
+            </div>
           </section>
         </aside>
 

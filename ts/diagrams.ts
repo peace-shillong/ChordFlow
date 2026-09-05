@@ -413,17 +413,35 @@ export class DiagramRenderer {
     });
 
     const padX = 14;
-    const padY = 24;
     const keyboardW = w - padX * 2;
-    const keyboardH = h - padY * 2;
-
     const whiteKeyW = keyboardW / numWhiteKeys;
-    const whiteKeyH = keyboardH;
-    const blackKeyW = whiteKeyW * 0.62;
-    const blackKeyH = whiteKeyH * 0.62;
+
+    // Natural realistic key aspect ratio (~4.6:1) instead of stretched full height
+    const whiteKeyH = Math.min(115, Math.max(88, Math.round(whiteKeyW * 4.6)));
+    const blackKeyW = Math.round(whiteKeyW * 0.62);
+    const blackKeyH = Math.round(whiteKeyH * 0.63);
+
+    // Centered vertically with room for top rail
+    const padY = Math.max(24, Math.round((h - whiteKeyH) / 2));
 
     const activeWhiteColor = isDark ? "#6366f1" : "#4f46e5";
     const activeBlackColor = isDark ? "#ec4899" : "#db2777";
+
+    // 1. Draw Top Fallboard / Felt Strip
+    ctx.fillStyle = isDark ? "#1e293b" : "#334155";
+    ctx.beginPath();
+    ctx.roundRect(padX - 4, padY - 12, keyboardW + 8, 12, [5, 5, 0, 0]);
+    ctx.fill();
+
+    // Red acoustic felt lining
+    ctx.fillStyle = "#991b1b";
+    ctx.fillRect(padX - 2, padY - 3, keyboardW + 4, 3);
+
+    // Subtle drop shadow under piano
+    ctx.fillStyle = isDark ? "rgba(0,0,0,0.4)" : "rgba(0,0,0,0.08)";
+    ctx.beginPath();
+    ctx.roundRect(padX - 2, padY, keyboardW + 4, whiteKeyH + 4, 6);
+    ctx.fill();
 
     const whiteKeys: { midi: number; x: number; y: number; w: number; h: number }[] = [];
     const blackKeys: { midi: number; x: number; y: number; w: number; h: number }[] = [];
@@ -445,7 +463,7 @@ export class DiagramRenderer {
       currentMidi++;
     }
 
-    // 1. White Keys
+    // 2. White Keys
     for (const k of whiteKeys) {
       const isActive = activeMidiSet.has(k.midi);
       ctx.fillStyle = isActive
@@ -453,11 +471,11 @@ export class DiagramRenderer {
         : isDark
         ? "#f8fafc"
         : "#ffffff";
-      ctx.strokeStyle = isDark ? "#334155" : "#cbd5e1";
+      ctx.strokeStyle = isDark ? "#475569" : "#cbd5e1";
       ctx.lineWidth = 1;
 
       ctx.beginPath();
-      ctx.roundRect(k.x, k.y, k.w - 1.5, k.h, [0, 0, 4, 4]);
+      ctx.roundRect(k.x, k.y, k.w - 1, k.h, [0, 0, 4, 4]);
       ctx.fill();
       ctx.stroke();
 
@@ -471,19 +489,19 @@ export class DiagramRenderer {
           const semitonesFromRoot = (k.midi % 12 - noteNameToMidi(chord.root + "4") % 12 + 12) % 12;
           label = INTERVAL_NAMES[semitonesFromRoot] || noteName;
         }
-        ctx.fillText(label, k.x + k.w / 2, k.y + k.h - 12);
+        ctx.fillText(label, k.x + k.w / 2, k.y + k.h - 10);
       }
 
       this.clickTargets.push({
         x: k.x + k.w / 2,
-        y: k.y + k.h * 0.8,
+        y: k.y + k.h * 0.75,
         radius: k.w / 2,
         midi: k.midi,
         instrument: "piano"
       });
     }
 
-    // 2. Black Keys
+    // 3. Black Keys (Layered above white keys)
     for (const k of blackKeys) {
       const isActive = activeMidiSet.has(k.midi);
       ctx.fillStyle = isActive

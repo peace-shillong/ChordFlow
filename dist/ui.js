@@ -1,4 +1,4 @@
-import { getCapoSoundingRoot, getScaleDegree } from "./chord.js";
+import { getCapoSoundingRoot, getScaleDegree, GENERATOR_STYLES } from "./chord.js";
 import { audio } from "./audio.js";
 import { diagrams } from "./diagrams.js";
 import { progression } from "./progression.js";
@@ -75,6 +75,10 @@ export class UIManager {
         this.presetSelectEl = document.getElementById("preset-progression-select");
         this.inversionContainerEl = document.getElementById("inversion-pills-container");
         this.advancedDrawerEl = document.getElementById("advanced-settings-drawer");
+        // Progression Generator Elements
+        this.generatorTargetEl = document.getElementById("generator-target-chord");
+        this.generatorStyleSelectEl = document.getElementById("generator-style-select");
+        this.btnGenerateEl = document.getElementById("btn-generate-progression");
     }
     bindEvents() {
         // Mode toggle
@@ -188,6 +192,19 @@ export class UIManager {
         });
         this.qualityFilterEl?.addEventListener("change", () => {
             this.renderChordGrid();
+        });
+        // Progression Auto-Generator Button
+        this.btnGenerateEl?.addEventListener("click", () => {
+            const selectedChordId = this.state.selectedChord || "Cmaj";
+            const styleId = this.generatorStyleSelectEl.value;
+            const newChords = this.db.generateProgressionForChord(selectedChordId, styleId);
+            progression.setProgression(newChords);
+            this.playActiveChord();
+            // Visual feedback
+            this.btnGenerateEl.classList.add("btn-pressed");
+            setTimeout(() => this.btnGenerateEl.classList.remove("btn-pressed"), 220);
+            // Scroll progression into view on mobile
+            this.progressionCardsEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
         });
         // Interactive Canvas Note Clicking
         const handleCanvasClick = (e) => {
@@ -327,6 +344,27 @@ export class UIManager {
         });
         // 4. Tunings
         this.updateTuningsDropdown();
+        // 5. Generator Styles
+        this.populateGeneratorStyles();
+    }
+    populateGeneratorStyles() {
+        if (!this.generatorStyleSelectEl)
+            return;
+        this.generatorStyleSelectEl.innerHTML = "";
+        const categories = Array.from(new Set(GENERATOR_STYLES.map(s => s.category)));
+        categories.forEach(cat => {
+            const group = document.createElement("optgroup");
+            group.label = cat;
+            const styles = GENERATOR_STYLES.filter(s => s.category === cat);
+            styles.forEach(s => {
+                const opt = document.createElement("option");
+                opt.value = s.id;
+                opt.textContent = s.name;
+                opt.title = s.description;
+                group.appendChild(opt);
+            });
+            this.generatorStyleSelectEl.appendChild(group);
+        });
     }
     updateTuningsDropdown() {
         const inst = this.db.getInstrument(this.state.activeInstrument);
@@ -403,9 +441,16 @@ export class UIManager {
         this.renderActiveChord();
         this.renderProgressionCards();
     }
-    selectChord(chordId) {
+    selectChord(chordId, updateActiveProgressionSlot = true) {
         this.state.selectedChord = chordId;
         this.state.selectedInversionIndex = 0;
+        // Update currently active chord slot in progression if enabled
+        if (updateActiveProgressionSlot && this.state.progression.length > 0) {
+            const activeIdx = this.state.activeChordIndex;
+            if (activeIdx >= 0 && activeIdx < this.state.progression.length) {
+                progression.setChordAt(activeIdx, chordId);
+            }
+        }
         this.renderActiveChord();
         this.playActiveChord();
     }
@@ -413,6 +458,12 @@ export class UIManager {
         const success = progression.addChord(chordId);
         if (!success) {
             alert("Progression limit reached (maximum 7 chords).");
+        }
+        else {
+            this.state.selectedChord = chordId;
+            this.state.selectedInversionIndex = 0;
+            this.renderActiveChord();
+            this.playActiveChord();
         }
     }
     // --- Rendering Functions ---
@@ -430,6 +481,10 @@ export class UIManager {
         }
         this.chordSubtitleEl.textContent = `${chord.name}${capoInfo}`;
         this.chordNotesEl.textContent = `Notes: ${chord.notes.join(" - ")} | Scale: ${chord.scale}`;
+        // Update Progression Generator starting chord badge
+        if (this.generatorTargetEl) {
+            this.generatorTargetEl.textContent = `${chord.name} (${chord.symbol})`;
+        }
         // Inversions
         this.renderInversionPills(chord);
         // Get tuning strings if applicable
