@@ -44,6 +44,10 @@ export class ProgressionManager {
     this.activeStrumPattern = pattern;
   }
 
+  public getActiveStrumPattern(): StrumPattern | null {
+    return this.activeStrumPattern;
+  }
+
   public addListener(listener: ProgressionListener): void {
     this.listeners.add(listener);
   }
@@ -241,28 +245,55 @@ export class ProgressionManager {
         audio.playClick(isFirstBeatOfChord, this.nextBeatTime);
       }
 
-      // Play chord/notes on beat 1 or strum subdivisions
+      // Play chord/notes according to strum subdivisions or beat 1
       const chordId = this.chords[this.activeIndex];
       const chordObj = this.db?.getChordById(chordId);
 
       if (chordObj) {
-        if (isFirstBeatOfChord) {
-          const midiNotes = this.getChordMidiForInstrument(chordObj, this.activeInstrument);
-          if (this.activeInstrument === "harmonica") {
-            // Harmonica plays notes sequentially (arpeggiated melodic line)
-            midiNotes.forEach((note, idx) => {
-              audio.playNote(note, "harmonica", this.nextBeatTime + idx * 0.12, 0.8);
-            });
-          } else {
-            audio.playChord(midiNotes, this.activeInstrument, this.nextBeatTime, true);
-          }
-        } else if (this.activeStrumPattern && this.activeStrumPattern.pattern) {
+        const midiNotes = this.getChordMidiForInstrument(chordObj, this.activeInstrument);
+
+        if (this.activeStrumPattern && this.activeStrumPattern.pattern && this.activeStrumPattern.pattern.length > 0) {
           const pattern = this.activeStrumPattern.pattern;
-          const patternIndex = (this.currentBeatInChord * 2) % pattern.length;
-          const stroke = pattern[patternIndex];
-          if (stroke === "D" || stroke === "U") {
-            const midiNotes = this.getChordMidiForInstrument(chordObj, this.activeInstrument);
-            audio.playChord(midiNotes, this.activeInstrument, this.nextBeatTime, false);
+          const numSlots = pattern.length;
+          const subsPerBeat = Math.max(1, Math.round(numSlots / this.beatsPerChord));
+          const subDuration = secondsPerBeat / subsPerBeat;
+
+          for (let s = 0; s < subsPerBeat; s++) {
+            const slotIdx = (this.currentBeatInChord * subsPerBeat + s) % numSlots;
+            const stroke = pattern[slotIdx];
+            const strokeTime = this.nextBeatTime + s * subDuration;
+
+            if (this.activeInstrument === "harmonica") {
+              if (stroke === "D" || stroke === "D+U" || (isFirstBeatOfChord && s === 0 && stroke !== "")) {
+                midiNotes.forEach((note, idx) => {
+                  audio.playNote(note, "harmonica", strokeTime + idx * 0.05, 0.4);
+                });
+              } else if (stroke === "U") {
+                midiNotes.slice().reverse().forEach((note, idx) => {
+                  audio.playNote(note, "harmonica", strokeTime + idx * 0.05, 0.4);
+                });
+              }
+              // Silence on rests ("")
+            } else {
+              if (stroke === "D") {
+                audio.playChord(midiNotes, this.activeInstrument, strokeTime, true, "down");
+              } else if (stroke === "U") {
+                audio.playChord(midiNotes, this.activeInstrument, strokeTime, true, "up");
+              } else if (stroke === "D+U") {
+                audio.playChord(midiNotes, this.activeInstrument, strokeTime, true, "down_up");
+              }
+              // Silence on rests ("")
+            }
+          }
+        } else {
+          if (isFirstBeatOfChord) {
+            if (this.activeInstrument === "harmonica") {
+              midiNotes.forEach((note, idx) => {
+                audio.playNote(note, "harmonica", this.nextBeatTime + idx * 0.12, 0.8);
+              });
+            } else {
+              audio.playChord(midiNotes, this.activeInstrument, this.nextBeatTime, true, "down");
+            }
           }
         }
       }

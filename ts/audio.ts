@@ -149,6 +149,44 @@ export class AudioEngine {
     return this.isMuted;
   }
 
+  public resetInstrument(instrument: InstrumentId): AudioSettings {
+    const defaultPreset = SOUND_PRESETS[instrument]?.[0]?.id || "standard";
+    this.activePreset[instrument] = defaultPreset;
+    const defaults: AudioSettings = {
+      lpf: 12000,
+      hpf: 80,
+      decay: 0.3,
+      detune: 0,
+      reverb: 0.2,
+      volume: 0.8
+    };
+    delete this.customSettings[instrument];
+    try {
+      localStorage.removeItem(`chordflow-audio-${instrument}`);
+    } catch {
+      // Ignore
+    }
+    this.applyAudioSettings(instrument);
+    this.saveSettings();
+    return defaults;
+  }
+
+  public resetAll(): void {
+    const instruments: InstrumentId[] = ["piano", "guitar", "ukulele", "guitalele", "violin", "bass", "harmonica"];
+    instruments.forEach(inst => {
+      this.activePreset[inst] = SOUND_PRESETS[inst]?.[0]?.id || "standard";
+      delete this.customSettings[inst];
+      try {
+        localStorage.removeItem(`chordflow-audio-${inst}`);
+      } catch {
+        // Ignore
+      }
+    });
+    this.masterVolume = 0.8;
+    this.applyAudioSettings("guitar");
+    this.saveSettings();
+  }
+
   public setPreset(instrument: InstrumentId, presetId: string): void {
     this.activePreset[instrument] = presetId;
     this.saveSettings();
@@ -162,17 +200,34 @@ export class AudioEngine {
     const current = this.getAudioSettings(instrument);
     this.customSettings[instrument] = { ...current, ...settings };
     this.applyAudioSettings(instrument);
+    try {
+      localStorage.setItem(`chordflow-audio-${instrument}`, JSON.stringify(this.customSettings[instrument]));
+    } catch {
+      // Ignore
+    }
     this.saveSettings();
   }
 
   public getAudioSettings(instrument: string): AudioSettings {
+    // Check localStorage fallback for per-instrument key if not in memory
+    if (!this.customSettings[instrument]) {
+      try {
+        const saved = localStorage.getItem(`chordflow-audio-${instrument}`);
+        if (saved) {
+          this.customSettings[instrument] = JSON.parse(saved);
+        }
+      } catch {
+        // Ignore
+      }
+    }
+
     return this.customSettings[instrument] || {
-      lpf: 20000,
-      hpf: 20,
-      decay: 1.2,
+      lpf: 12000,
+      hpf: 80,
+      decay: 0.3,
       detune: 0,
-      reverb: 0.15,
-      volume: 1.0
+      reverb: 0.2,
+      volume: 0.8
     };
   }
 

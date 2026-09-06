@@ -9,6 +9,15 @@
     content="A minimalist, modern Web Audio SPA for previewing chords across Piano, Guitar, Ukulele, Guitalele, Violin, Bass, and Harmonica, building chord progressions, and exploring music theory.">
   <meta name="theme-color" content="#0b0d17">
 
+  <!-- Prevent theme FOUC (Flash of Unstyled Content) -->
+  <script>
+    (function() {
+      const t = localStorage.getItem('chordflow-theme') ||
+        (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
+
   <link rel="stylesheet" href="css/main.css">
 
   <!-- jsPDF CDN for single-script printable PDF export -->
@@ -250,16 +259,30 @@
               </div>
             </div>
 
-            <!-- Strum Visualizer Ticker (Beginner Clean Mode) -->
+            <!-- Strum Visualizer Ticker (Beginner Clean Mode & Playback Sync) -->
             <div id="strum-visualizer-ticker" class="strum-visualizer-container" aria-label="Strumming Rhythm Visualizer"></div>
 
             <!-- Strum Pattern Editor (Advanced Mode) -->
             <div id="strum-pattern-editor-container" class="strum-editor-container" style="display: none;" aria-label="Interactive Strum Pattern Editor">
               <div class="editor-header">
-                <span class="editor-title">🎸 Strum Pattern Editor (16 Subdivisions):</span>
-                <span class="editor-hint">Click slots to toggle: <b>D</b> (Down) → <b>U</b> (Up) → <b>D+U</b> → <b>Rest</b></span>
+                <div class="editor-header-left">
+                  <span class="editor-title">🎸 Strum Pattern Editor (16 Subdivisions):</span>
+                  <span class="editor-hint">Click slots to cycle: <b>D</b> (↓) → <b>U</b> (↑) → <b>D+U</b> (↓↑) → <b>Rest</b> (·)</span>
+                </div>
+                <div class="editor-preset-wrapper">
+                  <label for="editor-strum-select" class="editor-preset-label">Pattern Preset:</label>
+                  <select id="editor-strum-select" class="custom-select editor-preset-select" aria-label="Select Strum Pattern Preset"></select>
+                </div>
               </div>
               <div id="strum-editor-grid" class="strum-editor-grid"></div>
+              <div class="editor-actions-row">
+                <button id="btn-apply-strum" class="btn-apply-strum" type="button" title="Apply this strum pattern to playback and visualizer">
+                  ✓ Apply
+                </button>
+                <button id="btn-reset-strum" class="btn-reset-strum" type="button" title="Discard unsaved edits in grid">
+                  ↺ Reset
+                </button>
+              </div>
             </div>
           </section>
         </div>
@@ -360,18 +383,18 @@
           <div class="panel-subtitle">🎛️ Audio Synthesis Parameters</div>
           <div class="audio-slider-row">
             <label for="slider-lpf">Low-Pass Filter (LPF):</label>
-            <input type="range" id="slider-lpf" min="200" max="20000" value="20000" step="100">
-            <span id="val-lpf">20000 Hz</span>
+            <input type="range" id="slider-lpf" min="200" max="20000" value="12000" step="100">
+            <span id="val-lpf">12000 Hz</span>
           </div>
           <div class="audio-slider-row">
             <label for="slider-hpf">High-Pass Filter (HPF):</label>
-            <input type="range" id="slider-hpf" min="20" max="2000" value="20" step="10">
-            <span id="val-hpf">20 Hz</span>
+            <input type="range" id="slider-hpf" min="20" max="2000" value="80" step="10">
+            <span id="val-hpf">80 Hz</span>
           </div>
           <div class="audio-slider-row">
-            <label for="slider-decay">Decay / Sustain:</label>
-            <input type="range" id="slider-decay" min="0.1" max="3.0" value="1.2" step="0.1">
-            <span id="val-decay">1.2 s</span>
+            <label for="slider-decay">Decay / Release:</label>
+            <input type="range" id="slider-decay" min="0.05" max="3.0" value="0.3" step="0.05">
+            <span id="val-decay">300 ms</span>
           </div>
           <div class="audio-slider-row">
             <label for="slider-detune">Detune (±25 cents):</label>
@@ -380,8 +403,16 @@
           </div>
           <div class="audio-slider-row">
             <label for="slider-reverb">Reverb Amount:</label>
-            <input type="range" id="slider-reverb" min="0" max="100" value="15" step="5">
-            <span id="val-reverb">15%</span>
+            <input type="range" id="slider-reverb" min="0" max="100" value="20" step="5">
+            <span id="val-reverb">20%</span>
+          </div>
+          <div class="audio-reset-actions">
+            <button id="btn-reset-audio-instrument" class="btn-reset-audio" type="button" title="Reset this instrument's sound parameters to default">
+              ↺ Reset to Default
+            </button>
+            <button id="btn-reset-all-audio" class="link-reset-all" type="button" title="Reset all instruments' audio settings to default">
+              Reset All
+            </button>
           </div>
         </div>
       </div>

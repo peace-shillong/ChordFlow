@@ -1587,6 +1587,50 @@ button {
   color: var(--text);
 }
 
+.audio-reset-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 6px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.btn-reset-audio {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-reset-audio:hover {
+  background: var(--surface-hover);
+  border-color: var(--accent);
+  color: var(--accent-light);
+}
+
+.link-reset-all {
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  font-size: 11px;
+  cursor: pointer;
+  text-decoration: underline;
+  transition: var(--transition);
+}
+
+.link-reset-all:hover {
+  color: var(--danger);
+}
+
 /* ==========================================================================
    Real-Time Pitch Tuner Modal Styles
    ========================================================================== */
@@ -2035,7 +2079,30 @@ button {
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
+  gap: 8px;
+}
+
+.editor-header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.editor-preset-wrapper {
+  display: flex;
+  align-items: center;
   gap: 6px;
+}
+
+.editor-preset-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.editor-preset-select {
+  font-size: 11px;
+  padding: 4px 8px;
 }
 
 .editor-title {
@@ -2083,8 +2150,54 @@ button {
 }
 
 .cell-val {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 800;
+  color: var(--text);
+}
+
+.cell-val .arrow {
+  color: var(--accent-light);
+}
+
+.editor-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+.btn-apply-strum {
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  border: 1px solid transparent;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-apply-strum:hover {
+  background: var(--accent-dark);
+  box-shadow: var(--shadow-glow);
+}
+
+.btn-reset-strum {
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-reset-strum:hover {
+  background: var(--surface-hover);
   color: var(--text);
 }
 

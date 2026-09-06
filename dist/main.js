@@ -8,6 +8,8 @@ async function bootstrap() {
         await db.loadAll();
         progression.setDatabase(db);
         const savedProgression = progression.getChords();
+        const savedTheme = localStorage.getItem("chordflow-theme") ||
+            (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
         const initialState = {
             mode: "clean", // Spec: Clean Mode is default for beginners
             activeInstrument: "guitar",
@@ -34,7 +36,7 @@ async function bootstrap() {
                 showCircle: true,
                 showInversions: true
             },
-            theme: "dark"
+            theme: savedTheme
         };
         const ui = new UIManager(db, initialState);
         ui.init();

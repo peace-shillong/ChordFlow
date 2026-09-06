@@ -7,13 +7,15 @@ import { exporter } from "./export.js";
 import { tuner } from "./tuner.js";
 export class UIManager {
     constructor(db, initialState) {
-        // Custom Strum Pattern State (16 subdivisions)
-        this.customStrumSteps = ["D", "", "D", "U", "", "U", "D", "U", "D", "", "D", "U", "", "U", "D", "U"];
+        // Strum Pattern State (16 subdivisions)
+        this.appliedStrumSteps = [];
+        this.editorStrumSteps = [];
         this.db = db;
         this.state = initialState;
     }
     init() {
         this.cacheElements();
+        this.initStrumPatternState();
         this.bindEvents();
         this.populateFiltersAndPresets();
         this.initTuner();
@@ -85,10 +87,16 @@ export class UIManager {
         this.volumeSliderEl = document.getElementById("volume-slider");
         this.volumeValueEl = document.getElementById("volume-value-display");
         this.volumeIconBtnEl = document.getElementById("volume-icon-btn");
-        // Strum Visualizers
+        // Strum Visualizers & Editor Elements
         this.strumTickerEl = document.getElementById("strum-visualizer-ticker");
         this.strumEditorContainerEl = document.getElementById("strum-pattern-editor-container");
         this.strumEditorGridEl = document.getElementById("strum-editor-grid");
+        this.editorStrumSelectEl = document.getElementById("editor-strum-select");
+        this.btnApplyStrumEl = document.getElementById("btn-apply-strum");
+        this.btnResetStrumEl = document.getElementById("btn-reset-strum");
+        // Audio Reset Controls
+        this.btnResetAudioInstEl = document.getElementById("btn-reset-audio-instrument");
+        this.btnResetAllAudioEl = document.getElementById("btn-reset-all-audio");
         // Chord Preview & Diagram
         this.mainCanvas = document.getElementById("main-diagram-canvas");
         this.chordTitleEl = document.getElementById("active-chord-title");
@@ -125,6 +133,66 @@ export class UIManager {
         this.sliderReverbEl = document.getElementById("slider-reverb");
         this.valReverbEl = document.getElementById("val-reverb");
     }
+    mapPatternTo16Subdivisions(pattern) {
+        const result = new Array(16).fill("");
+        if (!pattern || pattern.length === 0)
+            return result;
+        if (pattern.length === 16) {
+            return [...pattern];
+        }
+        else if (pattern.length === 8) {
+            for (let i = 0; i < 8; i++) {
+                result[i * 2] = pattern[i] || "";
+            }
+        }
+        else if (pattern.length === 6) {
+            const map6 = [0, 3, 5, 8, 11, 13];
+            map6.forEach((slot, i) => {
+                result[slot] = pattern[i] || "";
+            });
+        }
+        else {
+            for (let i = 0; i < 16; i++) {
+                const srcIdx = Math.floor((i * pattern.length) / 16);
+                if (i % Math.max(1, Math.round(16 / pattern.length)) === 0) {
+                    result[i] = pattern[srcIdx] || "";
+                }
+            }
+        }
+        return result;
+    }
+    initStrumPatternState() {
+        try {
+            const savedStrum = localStorage.getItem("chordflow-active-strum");
+            if (savedStrum) {
+                const parsed = JSON.parse(savedStrum);
+                if (parsed && Array.isArray(parsed.pattern) && parsed.pattern.length > 0) {
+                    this.appliedStrumSteps = this.mapPatternTo16Subdivisions(parsed.pattern);
+                    this.editorStrumSteps = [...this.appliedStrumSteps];
+                    progression.setStrumPattern({
+                        id: parsed.id || "custom",
+                        name: parsed.name || "Custom Pattern",
+                        pattern: [...this.appliedStrumSteps],
+                        accent: parsed.accent || [0, 4, 8, 12]
+                    });
+                    return;
+                }
+            }
+        }
+        catch {
+            // Ignore
+        }
+        // Default to basic preset mapped to 16 subdivisions
+        const basic = this.db.getStrumPattern("basic");
+        this.appliedStrumSteps = this.mapPatternTo16Subdivisions(basic?.pattern || ["D", "", "D", "U", "D", "", "D", "U"]);
+        this.editorStrumSteps = [...this.appliedStrumSteps];
+        progression.setStrumPattern({
+            id: "basic",
+            name: basic?.name || "Basic Down-Up",
+            pattern: [...this.appliedStrumSteps],
+            accent: [0, 4, 8, 12]
+        });
+    }
     bindEvents() {
         // 1. Mode Switcher (Clean vs Advanced)
         document.querySelectorAll(".mode-tab").forEach(tab => {
@@ -133,9 +201,10 @@ export class UIManager {
                 this.setMode(mode);
             });
         });
-        // 2. Theme Toggle
+        // 2. Theme Toggle (Persisted to localStorage)
         document.getElementById("btn-theme-toggle")?.addEventListener("click", () => {
-            const nextTheme = this.state.theme === "dark" ? "light" : this.state.theme === "light" ? "system" : "dark";
+            const currentTheme = document.documentElement.getAttribute("data-theme") || this.state.theme;
+            const nextTheme = currentTheme === "dark" ? "light" : "dark";
             this.setTheme(nextTheme);
         });
         // 3. Modals Open / Close
@@ -313,12 +382,85 @@ export class UIManager {
             this.state.tuning = this.tuningSelectEl.value;
             this.renderActiveChord();
         });
-        // 11. Strum Pattern Select
+        // 11. Strum Pattern Select (Settings Modal)
         this.strumSelectEl?.addEventListener("change", () => {
             this.state.strumPattern = this.strumSelectEl.value;
-            const pattern = this.db.getStrumPattern(this.state.strumPattern);
-            progression.setStrumPattern(pattern || null);
+            const preset = this.db.getStrumPattern(this.state.strumPattern);
+            if (preset) {
+                const mapped = this.mapPatternTo16Subdivisions(preset.pattern);
+                this.appliedStrumSteps = [...mapped];
+                this.editorStrumSteps = [...mapped];
+                const activeStrum = {
+                    id: preset.id,
+                    name: preset.name,
+                    pattern: [...mapped],
+                    accent: [0, 4, 8, 12]
+                };
+                progression.setStrumPattern(activeStrum);
+                try {
+                    localStorage.setItem("chordflow-active-strum", JSON.stringify(activeStrum));
+                }
+                catch {
+                    // Ignore
+                }
+                if (this.editorStrumSelectEl) {
+                    this.editorStrumSelectEl.value = preset.id;
+                }
+                this.renderStrumTicker();
+                this.renderStrumEditor();
+            }
+        });
+        // Strum Pattern Preset Dropdown (Strum Editor)
+        this.editorStrumSelectEl?.addEventListener("change", () => {
+            const presetId = this.editorStrumSelectEl.value;
+            const preset = this.db.getStrumPattern(presetId);
+            if (preset) {
+                this.editorStrumSteps = this.mapPatternTo16Subdivisions(preset.pattern);
+                this.renderStrumEditor();
+            }
+        });
+        // Apply Strum Pattern Button
+        this.btnApplyStrumEl?.addEventListener("click", () => {
+            this.appliedStrumSteps = [...this.editorStrumSteps];
+            const activeStrum = {
+                id: "custom",
+                name: "Custom Pattern",
+                pattern: [...this.appliedStrumSteps],
+                accent: [0, 4, 8, 12]
+            };
+            progression.setStrumPattern(activeStrum);
+            try {
+                localStorage.setItem("chordflow-active-strum", JSON.stringify(activeStrum));
+            }
+            catch {
+                // Ignore
+            }
             this.renderStrumTicker();
+            this.showToast("Strum pattern applied");
+        });
+        // Reset Strum Pattern Button (Discards Unsaved Grid Edits)
+        this.btnResetStrumEl?.addEventListener("click", () => {
+            this.editorStrumSteps = [...this.appliedStrumSteps];
+            this.renderStrumEditor();
+            this.showToast("Strum pattern edits discarded");
+        });
+        // Audio Reset to Default for Active Instrument Button
+        this.btnResetAudioInstEl?.addEventListener("click", () => {
+            audio.resetInstrument(this.state.activeInstrument);
+            this.updateAudioSliders();
+            if (this.soundPresetSelectEl) {
+                this.soundPresetSelectEl.value = audio.getPreset(this.state.activeInstrument);
+            }
+            this.showToast("Sound reset to default");
+        });
+        // Audio Reset All Instruments Button
+        this.btnResetAllAudioEl?.addEventListener("click", () => {
+            audio.resetAll();
+            this.updateAudioSliders();
+            if (this.soundPresetSelectEl) {
+                this.soundPresetSelectEl.value = audio.getPreset(this.state.activeInstrument);
+            }
+            this.showToast("All audio settings reset to default");
         });
         // 12. Preset Progressions Select
         this.presetSelectEl?.addEventListener("change", () => {
@@ -333,8 +475,30 @@ export class UIManager {
                     if (p.strumPatternId) {
                         this.strumSelectEl.value = p.strumPatternId;
                         this.state.strumPattern = p.strumPatternId;
-                        progression.setStrumPattern(this.db.getStrumPattern(p.strumPatternId) || null);
-                        this.renderStrumTicker();
+                        const sp = this.db.getStrumPattern(p.strumPatternId);
+                        if (sp) {
+                            const mapped = this.mapPatternTo16Subdivisions(sp.pattern);
+                            this.appliedStrumSteps = [...mapped];
+                            this.editorStrumSteps = [...mapped];
+                            const activeStrum = {
+                                id: sp.id,
+                                name: sp.name,
+                                pattern: [...mapped],
+                                accent: [0, 4, 8, 12]
+                            };
+                            progression.setStrumPattern(activeStrum);
+                            try {
+                                localStorage.setItem("chordflow-active-strum", JSON.stringify(activeStrum));
+                            }
+                            catch {
+                                // Ignore
+                            }
+                            if (this.editorStrumSelectEl) {
+                                this.editorStrumSelectEl.value = sp.id;
+                            }
+                            this.renderStrumTicker();
+                            this.renderStrumEditor();
+                        }
                     }
                 }
             }
@@ -515,7 +679,8 @@ export class UIManager {
         }
         if (this.sliderDecayEl) {
             this.sliderDecayEl.value = `${settings.decay}`;
-            this.valDecayEl.textContent = `${settings.decay.toFixed(1)} s`;
+            const decayMs = Math.round(settings.decay * 1000);
+            this.valDecayEl.textContent = `${decayMs} ms`;
         }
         if (this.sliderDetuneEl) {
             this.sliderDetuneEl.value = `${settings.detune}`;
@@ -602,14 +767,23 @@ export class UIManager {
             });
             this.rootFilterEl.appendChild(pill);
         });
-        // 2. Strum patterns
+        // 2. Strum patterns (Settings modal & Strum editor dropdowns)
         const strums = this.db.getStrumPatterns();
         this.strumSelectEl.innerHTML = "";
+        if (this.editorStrumSelectEl) {
+            this.editorStrumSelectEl.innerHTML = "";
+        }
         strums.forEach(s => {
             const opt = document.createElement("option");
             opt.value = s.id;
             opt.textContent = `${s.name} (${s.pattern.filter(Boolean).join(" ")})`;
             this.strumSelectEl.appendChild(opt);
+            if (this.editorStrumSelectEl) {
+                const optEd = document.createElement("option");
+                optEd.value = s.id;
+                optEd.textContent = s.name;
+                this.editorStrumSelectEl.appendChild(optEd);
+            }
         });
         // 3. Preset progressions
         const presets = this.db.getProgressions();
@@ -704,7 +878,17 @@ export class UIManager {
     }
     setTheme(theme) {
         this.state.theme = theme;
-        this.applyTheme(theme);
+        let effectiveTheme = theme;
+        if (theme === "system") {
+            effectiveTheme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        }
+        try {
+            localStorage.setItem("chordflow-theme", effectiveTheme);
+        }
+        catch {
+            // Ignore
+        }
+        this.applyTheme(effectiveTheme);
     }
     applyTheme(theme) {
         let effectiveTheme = theme;
@@ -715,7 +899,7 @@ export class UIManager {
         const themeBtn = document.getElementById("btn-theme-toggle");
         if (themeBtn) {
             themeBtn.innerHTML = effectiveTheme === "dark" ? "🌙" : "☀️";
-            themeBtn.setAttribute("title", `Theme: ${theme}`);
+            themeBtn.setAttribute("title", `Theme: ${effectiveTheme}`);
         }
         this.renderActiveChord();
     }
@@ -988,23 +1172,38 @@ export class UIManager {
     renderStrumTicker() {
         if (!this.strumTickerEl)
             return;
-        if (!this.state.toggles.showStrum || this.state.mode === "clean") {
+        if (!this.state.toggles.showStrum) {
             this.strumTickerEl.style.display = "none";
             return;
         }
         this.strumTickerEl.style.display = "flex";
-        const pattern = this.db.getStrumPattern(this.state.strumPattern || "");
-        if (!pattern)
-            return;
+        const pattern = this.appliedStrumSteps.length === 16
+            ? this.appliedStrumSteps
+            : (progression.getActiveStrumPattern()?.pattern || this.mapPatternTo16Subdivisions(["D", "", "D", "U", "D", "", "D", "U"]));
         this.strumTickerEl.innerHTML = "";
-        pattern.pattern.forEach((stroke, i) => {
+        pattern.forEach((stroke, i) => {
             const beatBox = document.createElement("div");
-            const isAccent = pattern.accent?.includes(i);
-            beatBox.className = `strum-beat ${isAccent ? "accent" : ""} ${stroke ? "has-stroke" : "empty"}`;
+            const isAccent = (i % 4 === 0);
+            const isRest = !stroke || stroke === "" || stroke === "rest";
+            beatBox.className = `strum-beat ${isAccent ? "accent" : ""} ${!isRest ? "has-stroke" : "empty"}`;
             beatBox.setAttribute("data-strum-step", `${i}`);
+            let arrow = "·";
+            let label = "Rest";
+            if (stroke === "D") {
+                arrow = "↓";
+                label = "D";
+            }
+            else if (stroke === "U") {
+                arrow = "↑";
+                label = "U";
+            }
+            else if (stroke === "D+U") {
+                arrow = "↓↑";
+                label = "D+U";
+            }
             beatBox.innerHTML = `
-        <span class="strum-arrow">${stroke === "D" ? "↓" : stroke === "U" ? "↑" : "•"}</span>
-        <span class="strum-label">${stroke || "-"}</span>
+        <span class="strum-arrow">${arrow}</span>
+        <span class="strum-label">${label}</span>
       `;
             this.strumTickerEl.appendChild(beatBox);
         });
@@ -1013,25 +1212,28 @@ export class UIManager {
         if (!this.strumEditorGridEl)
             return;
         this.strumEditorGridEl.innerHTML = "";
-        this.customStrumSteps.forEach((step, idx) => {
+        this.editorStrumSteps.forEach((step, idx) => {
             const cell = document.createElement("button");
-            cell.className = `strum-editor-cell ${step ? "active" : ""}`;
+            const isRest = !step || step === "" || step === "rest";
+            cell.className = `strum-editor-cell ${!isRest ? "active" : ""}`;
+            cell.type = "button";
+            cell.setAttribute("data-slot", `${idx}`);
+            let symbol = "·";
+            if (step === "D")
+                symbol = "↓ D";
+            else if (step === "U")
+                symbol = "↑ U";
+            else if (step === "D+U")
+                symbol = "↓↑ D+U";
             cell.innerHTML = `
         <span class="cell-num">${idx + 1}</span>
-        <span class="cell-val">${step || "—"}</span>
+        <span class="cell-val">${symbol}</span>
       `;
             cell.addEventListener("click", () => {
-                // Cycle: D -> U -> D+U -> ""
+                // Cycle: "" (Rest) -> "D" -> "U" -> "D+U" -> ""
                 const nextMap = { "": "D", "D": "U", "U": "D+U", "D+U": "" };
-                this.customStrumSteps[idx] = nextMap[this.customStrumSteps[idx]] || "";
+                this.editorStrumSteps[idx] = nextMap[this.editorStrumSteps[idx] || ""] || "";
                 this.renderStrumEditor();
-                // Apply to progression
-                progression.setStrumPattern({
-                    id: "custom",
-                    name: "Custom Pattern",
-                    pattern: [...this.customStrumSteps],
-                    accent: [0, 4, 8, 12]
-                });
             });
             this.strumEditorGridEl.appendChild(cell);
         });
@@ -1047,10 +1249,22 @@ export class UIManager {
             }, 120);
         }
         const strumBeats = this.strumTickerEl.querySelectorAll(".strum-beat");
-        const targetIdx = (beat * 2) % (strumBeats.length || 1);
-        strumBeats.forEach((b, idx) => {
-            b.classList.toggle("current", idx === targetIdx || idx === targetIdx + 1);
-        });
+        if (strumBeats.length > 0) {
+            const beatsPerChord = progression.getBeatsPerChord() || 4;
+            const subsPerBeat = Math.max(1, Math.round(strumBeats.length / beatsPerChord));
+            const tempo = progression.getTempo();
+            const subIntervalMs = (60000 / tempo) / subsPerBeat;
+            for (let s = 0; s < subsPerBeat; s++) {
+                const slotIndex = (beat * subsPerBeat + s) % strumBeats.length;
+                setTimeout(() => {
+                    if (this.state.isPlaying) {
+                        strumBeats.forEach((b, idx) => {
+                            b.classList.toggle("current", idx === slotIndex);
+                        });
+                    }
+                }, s * subIntervalMs);
+            }
+        }
     }
     updatePlayButton() {
         if (this.playBtnEl) {
