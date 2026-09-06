@@ -123,6 +123,10 @@ export class UIManager {
         this.btnCloseGeneratorStylesEl = document.getElementById("btn-close-generator-styles");
         this.generatorSelectedStyleNameEl = document.getElementById("generator-selected-style-name");
         this.generatorSelectedStyleDescEl = document.getElementById("generator-selected-style-desc");
+        this.generatorModalSelectedNameEl = document.getElementById("generator-modal-selected-name");
+        this.generatorModalSelectedMetaEl = document.getElementById("generator-modal-selected-meta");
+        this.btnModalGenerateProgressionEl = document.getElementById("btn-modal-generate-progression");
+        this.btnCancelGeneratorStylesEl = document.getElementById("btn-cancel-generator-styles");
         this.generatorStylesGridEl = document.getElementById("generator-styles-grid");
         this.generatorCategoryPillsEl = document.getElementById("generator-category-filter-pills");
         this.generatorStyleSearchEl = document.getElementById("generator-style-search");
@@ -650,6 +654,19 @@ export class UIManager {
         document.getElementById("btn-close-generator-styles")?.addEventListener("click", () => {
             this.closeGeneratorStylesModal();
         });
+        this.btnCancelGeneratorStylesEl?.addEventListener("click", () => {
+            this.closeGeneratorStylesModal();
+        });
+        this.btnModalGenerateProgressionEl?.addEventListener("click", () => {
+            this.generateProgressionForSelectedStyle();
+            this.closeGeneratorStylesModal();
+            const styleObj = GENERATOR_STYLES.find(s => s.id === this.selectedGeneratorStyleId) || GENERATOR_STYLES[0];
+            this.playActiveChord();
+            this.btnGenerateEl?.classList.add("btn-pressed");
+            setTimeout(() => this.btnGenerateEl?.classList.remove("btn-pressed"), 220);
+            this.progressionCardsEl?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+            this.showToast(`Generated: ${styleObj.name} (${styleObj.bpm || 120} BPM) ⚡`);
+        });
     }
     openMobileLibrary() {
         if (!this.mobileLibraryModalEl || !this.mobileLibraryContainerEl)
@@ -862,12 +879,19 @@ export class UIManager {
     }
     updateGeneratorStyleDisplay() {
         const style = GENERATOR_STYLES.find(s => s.id === this.selectedGeneratorStyleId) || GENERATOR_STYLES[0];
+        const bpm = style.bpm || 120;
+        const strumName = this.getStrumPatternName(style.strumPatternId);
         if (this.generatorSelectedStyleNameEl) {
             this.generatorSelectedStyleNameEl.textContent = style.name;
         }
         if (this.generatorSelectedStyleDescEl) {
-            const strumName = this.getStrumPatternName(style.strumPatternId);
-            this.generatorSelectedStyleDescEl.textContent = `${style.category} • ${strumName}`;
+            this.generatorSelectedStyleDescEl.textContent = `${style.category} • ${bpm} BPM • ${strumName}`;
+        }
+        if (this.generatorModalSelectedNameEl) {
+            this.generatorModalSelectedNameEl.textContent = style.name;
+        }
+        if (this.generatorModalSelectedMetaEl) {
+            this.generatorModalSelectedMetaEl.textContent = `${bpm} BPM • ${style.category} • ${strumName}`;
         }
         if (this.generatorModalTargetChordEl) {
             const chordId = this.state.selectedChord || this.state.progression[this.state.activeChordIndex] || "Cmaj";
@@ -966,6 +990,7 @@ export class UIManager {
             card.className = `generator-style-card ${isSelected ? "selected" : ""}`;
             card.tabIndex = 0;
             card.setAttribute("role", "button");
+            card.setAttribute("data-style-id", s.id);
             card.setAttribute("aria-pressed", isSelected ? "true" : "false");
             const stepsHtml = chordSymbols.map((sym, idx) => `
         <span class="generator-formula-chord-pill" title="Step ${idx + 1}">${sym}</span>
@@ -977,6 +1002,7 @@ export class UIManager {
             <h4 class="generator-style-card-title">${s.name}</h4>
             <div class="generator-style-badges">
               <span class="generator-style-cat-tag">${s.category}</span>
+              <span class="generator-style-tempo-tag">⏱️ ${s.bpm || 120} BPM</span>
               <span class="generator-style-strum-tag">🎸 ${strumName}</span>
             </div>
           </div>
@@ -1013,25 +1039,58 @@ export class UIManager {
     selectGeneratorStyle(styleId, autoGenerate = false) {
         this.selectedGeneratorStyleId = styleId;
         this.updateGeneratorStyleDisplay();
-        this.closeGeneratorStylesModal();
         const styleObj = GENERATOR_STYLES.find(s => s.id === styleId) || GENERATOR_STYLES[0];
         if (autoGenerate) {
             this.generateProgressionForSelectedStyle();
+            this.closeGeneratorStylesModal();
             this.playActiveChord();
             this.progressionCardsEl?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-            this.showToast(`Generated: ${styleObj.name} ⚡`);
+            this.showToast(`Generated: ${styleObj.name} (${styleObj.bpm || 120} BPM) ⚡`);
         }
         else {
-            this.showToast(`Selected style: ${styleObj.name}`);
+            // Update visual selection in modal cards without closing modal
+            if (this.generatorStylesGridEl) {
+                const cards = this.generatorStylesGridEl.querySelectorAll(".generator-style-card");
+                cards.forEach(card => {
+                    const cid = card.getAttribute("data-style-id");
+                    const isSelected = cid === styleId;
+                    card.classList.toggle("selected", isSelected);
+                    card.setAttribute("aria-pressed", isSelected ? "true" : "false");
+                    const indicator = card.querySelector(".generator-style-selected-indicator");
+                    if (indicator)
+                        indicator.remove();
+                    if (isSelected) {
+                        const header = card.querySelector(".generator-style-card-header");
+                        const newInd = document.createElement("span");
+                        newInd.className = "generator-style-selected-indicator";
+                        newInd.textContent = "✓ Active";
+                        header?.appendChild(newInd);
+                    }
+                    const selBtn = card.querySelector(".btn-card-select-style");
+                    if (selBtn) {
+                        selBtn.classList.toggle("active", isSelected);
+                        selBtn.textContent = isSelected ? "✓ Selected" : "Select Style";
+                    }
+                });
+            }
         }
     }
     generateProgressionForSelectedStyle() {
         const selectedChordId = this.state.selectedChord || "Cmaj";
         const styleObj = GENERATOR_STYLES.find(s => s.id === this.selectedGeneratorStyleId) || GENERATOR_STYLES[0];
+        const targetTempo = styleObj.bpm || 120;
         const newChords = this.db.generateProgressionForChord(selectedChordId, styleObj.id);
-        progression.setProgression(newChords, undefined, undefined, styleObj.name);
+        this.state.tempo = targetTempo;
+        progression.setProgression(newChords, targetTempo, undefined, styleObj.name);
+        progression.setTempo(targetTempo);
         if (this.progressionTitleInputEl) {
             this.progressionTitleInputEl.value = styleObj.name;
+        }
+        if (this.tempoSliderEl) {
+            this.tempoSliderEl.value = `${targetTempo}`;
+        }
+        if (this.tempoValueEl) {
+            this.tempoValueEl.textContent = `${targetTempo} BPM`;
         }
         // Automatically generate and apply the matching Strumming Pattern for the selected Style
         const strumId = styleObj.strumPatternId || "basic";

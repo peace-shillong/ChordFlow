@@ -354,6 +354,12 @@ More Minor Changes
 2. Display the Style / Formula for Auto Chord Progression in a modal instead of a dropdown list 
 3. Instrument Tuning is not working for strings - may be removed  - Manual
 
+Final Refinement
+In Auto Chord Generation: When user sees the modal to select the style/Formula, after selecting his option, let him press Generate Progression button, the button will also be there in the modal, to make it easier for the user. Another thing we can do on Generating the chord progression, we can also set the tempo of the newly generated chord progression as per the style. 
+
+Now let's make this into a PWA
+
+
 After these minor fixes I am almost done now
 - left with making this into a PWA
 - testing it on live server and 
@@ -361,7 +367,6 @@ After these minor fixes I am almost done now
 
 What I saw in this version that is ready to deploy and I won't make any more changes:
 Future Enhancements or maybe not: 
-1. Auto Generate Chord Progression - when user generates the chord progression, the tempo is not generated as per the style but kept with the current tempo. 
-2. Capo on String instruments: I expected The Capo when turned on should change the chords in the chord progression and show the correct diagram for the correct chord that has been transposed to, but it didn't work, so let's leave this out for now. 
+1. Capo on String instruments: I expected The Capo when turned on should change the chords in the chord progression and show the correct diagram for the correct chord that has been transposed to, but it didn't work, so let's leave this out for now. 
 
 

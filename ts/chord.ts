@@ -57,6 +57,7 @@ export interface GeneratorStyle {
   name: string;
   description: string;
   strumPatternId?: string;
+  bpm?: number;
   formula: { semitones: number; quality: string }[];
 }
 
@@ -68,6 +69,7 @@ export const GENERATOR_STYLES: GeneratorStyle[] = [
     name: "Royal Road / 王道進行 (IV-V-iii-vi)",
     description: "The most iconic progression in J-Pop, Anime, and Game soundtracks",
     strumPatternId: "pop_rock",
+    bpm: 128,
     formula: [
       { semitones: 0, quality: "maj" },
       { semitones: 5, quality: "maj7" },
@@ -82,6 +84,7 @@ export const GENERATOR_STYLES: GeneratorStyle[] = [
     name: "Just The Two of Us / 4-3-6-1 (IV-III7-vi-I)",
     description: "Groovy Japanese City Pop & R&B progression with secondary dominant III7",
     strumPatternId: "swing",
+    bpm: 96,
     formula: [
       { semitones: 0, quality: "maj7" },
       { semitones: 5, quality: "maj7" },
@@ -96,6 +99,7 @@ export const GENERATOR_STYLES: GeneratorStyle[] = [
     name: "J-Rock Drive / Anime Anthem (VI-VII-i-i)",
     description: "High energy, driving J-Rock and opening theme cadence",
     strumPatternId: "pop_rock",
+    bpm: 165,
     formula: [
       { semitones: 0, quality: "min" },
       { semitones: 8, quality: "maj" },
@@ -109,6 +113,7 @@ export const GENERATOR_STYLES: GeneratorStyle[] = [
     name: "Koakuma / Minor 4-5-6 (iv-v-vi)",
     description: "Melancholic minor ascension common in Vocaloid and emotional ballads",
     strumPatternId: "ballad",
+    bpm: 88,
     formula: [
       { semitones: 0, quality: "min" },
       { semitones: 5, quality: "min" },
@@ -124,6 +129,7 @@ export const GENERATOR_STYLES: GeneratorStyle[] = [
     name: "Descending 7-Chord Circle Cycle",
     description: "The complete diatonic circle progression (I-IV-vii°-iii-vi-ii-V)",
     strumPatternId: "basic",
+    bpm: 110,
     formula: [
       { semitones: 0, quality: "maj" },
       { semitones: 5, quality: "maj" },
@@ -140,6 +146,7 @@ export const GENERATOR_STYLES: GeneratorStyle[] = [
     name: "Jazz Circle Cycle (ii-V-I-IV)",
     description: "Smooth continuous circle of fifths standard jazz movement",
     strumPatternId: "swing",
+    bpm: 130,
     formula: [
       { semitones: 0, quality: "maj7" },
       { semitones: 2, quality: "min7" },
@@ -154,6 +161,7 @@ export const GENERATOR_STYLES: GeneratorStyle[] = [
     name: "Minor Circle Turnaround (i-iv-bVII-bIII-bVI-iiø-V)",
     description: "Dramatic full minor key circle progression",
     strumPatternId: "slow_rock",
+    bpm: 76,
     formula: [
       { semitones: 0, quality: "min" },
       { semitones: 5, quality: "min" },
@@ -172,6 +180,7 @@ export const GENERATOR_STYLES: GeneratorStyle[] = [
     name: "Pop 4-Chord Hit (I-V-vi-IV)",
     description: "The most famous chord progression in modern pop history",
     strumPatternId: "pop_rock",
+    bpm: 120,
     formula: [
       { semitones: 0, quality: "maj" },
       { semitones: 7, quality: "maj" },
@@ -185,6 +194,7 @@ export const GENERATOR_STYLES: GeneratorStyle[] = [
     name: "Emotional Hero (i-bVI-bIII-bVII)",
     description: "Epic and emotional minor anthem progression",
     strumPatternId: "pop_rock",
+    bpm: 125,
     formula: [
       { semitones: 0, quality: "min" },
       { semitones: 8, quality: "maj" },
@@ -198,6 +208,7 @@ export const GENERATOR_STYLES: GeneratorStyle[] = [
     name: "50s Doo-Wop (I-vi-IV-V)",
     description: "Classic vintage ballad and retro pop turnaround",
     strumPatternId: "slow_rock",
+    bpm: 84,
     formula: [
       { semitones: 0, quality: "maj" },
       { semitones: 9, quality: "min" },
@@ -211,6 +222,7 @@ export const GENERATOR_STYLES: GeneratorStyle[] = [
     name: "Pachelbel Canon Progression",
     description: "Timeless stepwise bassline progression used in hundreds of songs",
     strumPatternId: "ballad",
+    bpm: 78,
     formula: [
       { semitones: 0, quality: "maj" },
       { semitones: 7, quality: "maj" },
@@ -229,6 +241,7 @@ export const GENERATOR_STYLES: GeneratorStyle[] = [
     name: "Jazz Rhythm Changes (Imaj7-VI7-ii7-V7)",
     description: "Core jazz turnaround standard",
     strumPatternId: "swing",
+    bpm: 135,
     formula: [
       { semitones: 0, quality: "maj7" },
       { semitones: 9, quality: "7" },
@@ -242,6 +255,7 @@ export const GENERATOR_STYLES: GeneratorStyle[] = [
     name: "Neo-Soul Groove (i7-iv7-bVII7-bIIImaj7)",
     description: "Rich, lush neo-soul and R&B chords",
     strumPatternId: "swing",
+    bpm: 85,
     formula: [
       { semitones: 0, quality: "min7" },
       { semitones: 5, quality: "min7" },
@@ -257,6 +271,7 @@ export const GENERATOR_STYLES: GeneratorStyle[] = [
     name: "12-Bar Blues (I7-IV7-I7-V7-IV7-I7)",
     description: "Essential Delta & Chicago blues progression",
     strumPatternId: "slow_rock",
+    bpm: 105,
     formula: [
       { semitones: 0, quality: "7" },
       { semitones: 5, quality: "7" },
@@ -272,6 +287,7 @@ export const GENERATOR_STYLES: GeneratorStyle[] = [
     name: "Andalusian Cadence (i-bVII-bVI-V)",
     description: "Classic Flamenco and Spanish Spanish Phrygian cadence",
     strumPatternId: "island",
+    bpm: 115,
     formula: [
       { semitones: 0, quality: "min" },
       { semitones: 10, quality: "maj" },
@@ -285,6 +301,7 @@ export const GENERATOR_STYLES: GeneratorStyle[] = [
     name: "Mixolydian Rock (I-bVII-IV-I)",
     description: "Classic rock, Hey Jude, and Southern rock anthem cadence",
     strumPatternId: "pop_rock",
+    bpm: 120,
     formula: [
       { semitones: 0, quality: "maj" },
       { semitones: 10, quality: "maj" },

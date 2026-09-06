@@ -594,6 +594,7 @@ export class DiagramRenderer {
     ctx.textAlign = "center";
     ctx.fillText(`🎹 Visible: ${octaveText}`, w / 2, bannerY + 14);
 
+
     // Draw White Keys
     for (const k of whiteKeys) {
       const isKeyActive = isNotesMode ? chordPitchClasses.has(k.midi % 12) : activeMidiSet.has(k.midi);
