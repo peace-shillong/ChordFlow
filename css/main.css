@@ -75,7 +75,9 @@
    Reset & Base Styles
    ========================================================================== */
 
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
@@ -94,7 +96,9 @@ body {
   overflow-x: hidden;
 }
 
-button, input, select {
+button,
+input,
+select {
   font-family: inherit;
   color: inherit;
   border: none;
@@ -116,13 +120,16 @@ button {
   width: 6px;
   height: 6px;
 }
+
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
   background: var(--border);
   border-radius: var(--radius-full);
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-dim);
 }
@@ -159,7 +166,9 @@ button {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* ==========================================================================
@@ -283,7 +292,8 @@ button {
   justify-content: center;
   gap: 6px;
   padding: 8px 16px;
-  min-height: 42px; /* Touch target standard */
+  min-height: 42px;
+  /* Touch target standard */
   border-radius: var(--radius);
   background: var(--surface-variant);
   border: 1px solid var(--border);
@@ -340,12 +350,15 @@ button {
     flex-direction: column;
     gap: 16px;
   }
+
   .col-diagram {
     order: 1;
   }
+
   .col-progression {
     order: 2;
   }
+
   .col-library {
     order: 3;
   }
@@ -361,19 +374,23 @@ button {
     gap: 18px;
     align-items: start;
   }
+
   .col-progression {
     grid-column: 1;
     order: 1;
   }
+
   .col-diagram {
     grid-column: 2;
     order: 2;
   }
+
   .col-library {
     grid-column: 1 / span 2;
     order: 3;
     width: 100%;
   }
+
   .col-library .chord-grid {
     height: 180px;
     max-height: 180px;
@@ -387,14 +404,17 @@ button {
     grid-template-columns: 1fr 1fr;
     gap: 12px;
   }
+
   .col-progression {
     grid-column: 1;
     order: 1;
   }
+
   .col-diagram {
     grid-column: 2;
     order: 2;
   }
+
   .col-library {
     grid-column: 1 / span 2;
     order: 3;
@@ -730,7 +750,8 @@ button {
   gap: 4px;
 }
 
-.prog-move-btn, .prog-play-card-btn {
+.prog-move-btn,
+.prog-play-card-btn {
   font-size: 10px;
   padding: 4px 8px;
   border-radius: 4px;
@@ -739,7 +760,8 @@ button {
   transition: var(--transition);
 }
 
-.prog-move-btn:hover:not(:disabled), .prog-play-card-btn:hover {
+.prog-move-btn:hover:not(:disabled),
+.prog-play-card-btn:hover {
   background: var(--accent);
   color: #ffffff;
 }
@@ -1643,11 +1665,13 @@ button {
     align-items: stretch;
     gap: 12px;
   }
+
   .generator-modal-selection-info {
     flex-direction: column;
     align-items: flex-start;
     gap: 4px;
   }
+
   .generator-modal-footer-actions {
     justify-content: flex-end;
   }
@@ -1965,8 +1989,13 @@ button {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 .modal-card {
@@ -1992,6 +2021,7 @@ button {
     transform: translateY(20px) scale(0.97);
     opacity: 0;
   }
+
   to {
     transform: translateY(0) scale(1);
     opacity: 1;
@@ -2155,6 +2185,107 @@ button {
 
 .link-reset-all:hover {
   color: var(--danger);
+}
+
+/* PWA Installation Card inside Settings Modal */
+.pwa-install-group {
+  margin-top: 10px;
+}
+
+.pwa-install-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.14) 0%, rgba(236, 72, 153, 0.08) 100%);
+  border-radius: var(--radius);
+  border: 1px solid var(--border-active);
+  transition: var(--transition);
+}
+
+.pwa-install-card:hover {
+  border-color: var(--accent);
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.12);
+}
+
+.pwa-install-info-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+}
+
+.pwa-install-icon {
+  font-size: 22px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.pwa-install-text-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.pwa-install-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+}
+
+.pwa-install-desc {
+  font-size: 11.5px;
+  line-height: 1.35;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.pwa-install-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, var(--accent) 0%, var(--secondary) 100%);
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 2px 8px var(--accent-glow);
+  transition: var(--transition);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.pwa-install-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px var(--accent-glow);
+}
+
+.pwa-install-btn:disabled {
+  opacity: 0.65;
+  cursor: default;
+  background: var(--surface-variant);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  box-shadow: none;
+  transform: none;
+}
+
+@media (max-width: 480px) {
+  .pwa-install-card {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .pwa-install-btn {
+    justify-content: center;
+  }
 }
 
 /* ==========================================================================
@@ -2793,4 +2924,234 @@ button {
 .toast-notification.toast-show {
   opacity: 1;
   transform: translateY(0);
+}
+
+/* ==========================================================================
+   About App Modal & Keyboard Shortcuts Guide
+   ========================================================================== */
+
+.about-modal-card {
+  max-width: 880px;
+  width: 95%;
+  max-height: 90vh;
+}
+
+.about-brand-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.about-brand-logo {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.about-version-badge {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent-light);
+  background: rgba(99, 102, 241, 0.18);
+  border: 1px solid var(--border-active);
+  padding: 2px 8px;
+  border-radius: 9999px;
+  letter-spacing: 0.3px;
+}
+
+.about-modal-body {
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  overflow-y: auto;
+}
+
+.about-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.about-section-title {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.about-description {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.about-features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.about-feature-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  background: var(--surface-variant);
+  border: 1px solid var(--border);
+  transition: var(--transition);
+}
+
+.about-feature-card:hover {
+  border-color: var(--border-active);
+  background: rgba(99, 102, 241, 0.08);
+  transform: translateY(-1px);
+}
+
+.about-feature-icon {
+  font-size: 22px;
+  line-height: 1;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.about-feature-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.about-feature-info h5 {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+}
+
+.about-feature-info p {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.about-shortcuts-table-wrapper {
+  overflow-x: auto;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.about-shortcuts-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+  text-align: left;
+}
+
+.about-shortcuts-table th {
+  background: var(--surface-variant);
+  padding: 10px 14px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.about-shortcuts-table td {
+  padding: 9px 14px;
+  border-top: 1px solid var(--border);
+  color: var(--text);
+}
+
+.about-shortcuts-table tr:hover td {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.about-shortcuts-table kbd {
+  display: inline-block;
+  padding: 2px 7px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--accent-light);
+  background: rgba(99, 102, 241, 0.16);
+  border: 1px solid var(--border-active);
+  border-radius: 4px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  white-space: nowrap;
+}
+
+.about-meta-section {
+  padding-top: 4px;
+}
+
+.about-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+
+.about-meta-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--accent-light);
+  display: block;
+}
+
+.about-meta-value {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-muted);
+  margin: 3px 0 0;
+}
+
+.about-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  border-bottom-left-radius: var(--radius-lg);
+  border-bottom-right-radius: var(--radius-lg);
+}
+
+.about-footer-tagline {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.btn-close-about-footer {
+  padding: 8px 20px;
+  font-size: 13px;
+  font-weight: 700;
+  border-radius: var(--radius);
+}
+
+@media (max-width: 640px) {
+  .about-features-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .about-modal-footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    text-align: center;
+  }
 }

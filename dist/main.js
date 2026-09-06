@@ -47,6 +47,8 @@ async function bootstrap() {
             loadingOverlay.classList.add("hidden");
             setTimeout(() => loadingOverlay.remove(), 400);
         }
+        // Register PWA Service Worker for offline support
+        registerServiceWorker();
     }
     catch (err) {
         console.error("Initialization error:", err);
@@ -59,6 +61,19 @@ async function bootstrap() {
         </div>
       `;
         }
+    }
+}
+function registerServiceWorker() {
+    if ("serviceWorker" in navigator && (window.location.protocol === "http:" || window.location.protocol === "https:")) {
+        window.addEventListener("load", () => {
+            navigator.serviceWorker.register("./sw.js")
+                .then((registration) => {
+                console.log("[PWA] Service Worker registered with scope:", registration.scope);
+            })
+                .catch((error) => {
+                console.warn("[PWA] Service Worker registration failed:", error);
+            });
+        });
     }
 }
 // Start application when DOM is ready

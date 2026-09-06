@@ -9,6 +9,7 @@ export class UIManager {
     constructor(db, initialState) {
         this.selectedGeneratorStyleId = "jp_royal_road";
         this.selectedGeneratorCategory = "All";
+        this.deferredPrompt = null;
         // Strum Pattern State (16 subdivisions)
         this.appliedStrumSteps = [];
         this.editorStrumSteps = [];
@@ -75,6 +76,10 @@ export class UIManager {
         this.tunerModalEl = document.getElementById("tuner-modal");
         this.mobileLibraryModalEl = document.getElementById("mobile-library-modal");
         this.mobileLibraryContainerEl = document.getElementById("mobile-library-container");
+        this.aboutModalEl = document.getElementById("about-modal");
+        this.btnOpenAboutEl = document.getElementById("btn-open-about");
+        this.btnCloseAboutEl = document.getElementById("btn-close-about");
+        this.btnCloseAboutFooterEl = document.getElementById("btn-close-about-footer");
         // Progression Header & Toolbar
         this.progressionTitleInputEl = document.getElementById("progression-title-input");
         this.progressionCounterBadgeEl = document.getElementById("progression-counter-badge");
@@ -137,6 +142,8 @@ export class UIManager {
         // this.tuningSelectEl = document.getElementById("tuning-select") as HTMLSelectElement;
         this.strumSelectEl = document.getElementById("strum-pattern-select");
         this.soundPresetSelectEl = document.getElementById("sound-preset-select");
+        this.btnInstallPwaEl = document.getElementById("btn-install-pwa");
+        this.pwaInstallStatusTextEl = document.getElementById("pwa-install-status-text");
         // Audio Synthesis Sliders
         this.sliderLpfEl = document.getElementById("slider-lpf");
         this.valLpfEl = document.getElementById("val-lpf");
@@ -604,6 +611,7 @@ export class UIManager {
             if (this.settingsModalEl)
                 this.settingsModalEl.style.display = "flex";
             this.updateAudioSliders();
+            this.updatePwaInstallState();
         });
         document.getElementById("btn-close-settings")?.addEventListener("click", () => {
             if (this.settingsModalEl)
@@ -613,6 +621,8 @@ export class UIManager {
             if (e.target === this.settingsModalEl)
                 this.settingsModalEl.style.display = "none";
         });
+        // PWA Install Listeners
+        this.initPwaInstallHandler();
         // Theory Modal
         document.getElementById("btn-open-theory")?.addEventListener("click", () => {
             if (this.theoryModalEl)
@@ -667,6 +677,90 @@ export class UIManager {
             this.progressionCardsEl?.scrollIntoView({ behavior: "smooth", block: "nearest" });
             this.showToast(`Generated: ${styleObj.name} (${styleObj.bpm || 120} BPM) ⚡`);
         });
+        // About App Modal Listeners
+        this.btnOpenAboutEl?.addEventListener("click", () => {
+            this.openAboutModal();
+        });
+        this.btnCloseAboutEl?.addEventListener("click", () => {
+            this.closeAboutModal();
+        });
+        this.btnCloseAboutFooterEl?.addEventListener("click", () => {
+            this.closeAboutModal();
+        });
+        this.aboutModalEl?.addEventListener("click", (e) => {
+            if (e.target === this.aboutModalEl) {
+                this.closeAboutModal();
+            }
+        });
+    }
+    initPwaInstallHandler() {
+        window.addEventListener("beforeinstallprompt", (e) => {
+            e.preventDefault();
+            this.deferredPrompt = e;
+            this.updatePwaInstallState();
+        });
+        window.addEventListener("appinstalled", () => {
+            this.deferredPrompt = null;
+            this.updatePwaInstallState();
+            this.showToast("ChordFlow successfully installed! 🎉");
+        });
+        this.btnInstallPwaEl?.addEventListener("click", async () => {
+            if (this.deferredPrompt) {
+                this.deferredPrompt.prompt();
+                const choiceResult = await this.deferredPrompt.userChoice;
+                if (choiceResult && choiceResult.outcome === "accepted") {
+                    this.showToast("Installing ChordFlow... ⚡");
+                }
+                this.deferredPrompt = null;
+                this.updatePwaInstallState();
+            }
+            else {
+                const isStandalone = window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+                if (isStandalone) {
+                    this.showToast("ChordFlow is already running as an installed app! 🎉");
+                }
+                else {
+                    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+                    if (isIOS) {
+                        this.showToast("To install on iOS: Tap Share (⎙) in Safari, then 'Add to Home Screen' (+)", 5000);
+                    }
+                    else {
+                        this.showToast("To install: Click the Install icon (⊕) in your browser address bar.", 5000);
+                    }
+                }
+            }
+        });
+        this.updatePwaInstallState();
+    }
+    updatePwaInstallState() {
+        const isStandalone = window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+        if (isStandalone) {
+            if (this.btnInstallPwaEl) {
+                this.btnInstallPwaEl.disabled = true;
+                this.btnInstallPwaEl.innerHTML = `<span>✓</span><span>Installed</span>`;
+            }
+            if (this.pwaInstallStatusTextEl) {
+                this.pwaInstallStatusTextEl.textContent = "ChordFlow is running as an installed standalone app.";
+            }
+        }
+        else if (this.deferredPrompt) {
+            if (this.btnInstallPwaEl) {
+                this.btnInstallPwaEl.disabled = false;
+                this.btnInstallPwaEl.innerHTML = `<span>⬇️</span><span>Install App</span>`;
+            }
+            if (this.pwaInstallStatusTextEl) {
+                this.pwaInstallStatusTextEl.textContent = "Ready to install! Click below to add ChordFlow to your home screen or desktop.";
+            }
+        }
+        else {
+            if (this.btnInstallPwaEl) {
+                this.btnInstallPwaEl.disabled = false;
+                this.btnInstallPwaEl.innerHTML = `<span>⬇️</span><span>Install App</span>`;
+            }
+            if (this.pwaInstallStatusTextEl) {
+                this.pwaInstallStatusTextEl.textContent = "Install as a standalone PWA for offline practice and zero latency.";
+            }
+        }
     }
     openMobileLibrary() {
         if (!this.mobileLibraryModalEl || !this.mobileLibraryContainerEl)
@@ -799,6 +893,52 @@ export class UIManager {
                 }
                 return;
             }
+            // '?' or 'A' = Toggle About & Shortcuts Modal
+            if (e.key === "?" || (e.code === "KeyA" && !e.ctrlKey && !e.metaKey && !e.altKey)) {
+                e.preventDefault();
+                if (this.aboutModalEl && this.aboutModalEl.style.display === "flex") {
+                    this.closeAboutModal();
+                }
+                else {
+                    this.openAboutModal();
+                }
+                return;
+            }
+            // 'T' = Toggle Tuner Modal
+            if (e.code === "KeyT" && !e.ctrlKey && !e.metaKey && !e.altKey) {
+                e.preventDefault();
+                if (this.tunerModalEl && this.tunerModalEl.style.display === "flex") {
+                    tuner.close();
+                }
+                else {
+                    tuner.open();
+                }
+                return;
+            }
+            // 'M' = Toggle Music Theory Modal
+            if (e.code === "KeyM" && !e.ctrlKey && !e.metaKey && !e.altKey) {
+                e.preventDefault();
+                if (this.theoryModalEl && this.theoryModalEl.style.display === "flex") {
+                    this.theoryModalEl.style.display = "none";
+                }
+                else {
+                    if (this.theoryModalEl)
+                        this.theoryModalEl.style.display = "flex";
+                }
+                return;
+            }
+            // 'S' = Toggle Settings Modal
+            if (e.code === "KeyS" && !e.ctrlKey && !e.metaKey && !e.altKey) {
+                e.preventDefault();
+                if (this.settingsModalEl && this.settingsModalEl.style.display === "flex") {
+                    this.settingsModalEl.style.display = "none";
+                }
+                else {
+                    if (this.settingsModalEl)
+                        this.settingsModalEl.style.display = "flex";
+                }
+                return;
+            }
             // Number Keys 1–8 (and 9, 0)
             const numMatch = e.code.match(/^(?:Digit|Numpad)([1-9]|0)$/);
             if (numMatch) {
@@ -917,6 +1057,16 @@ export class UIManager {
             this.generatorStylesModalEl.style.display = "none";
         }
     }
+    openAboutModal() {
+        if (this.aboutModalEl) {
+            this.aboutModalEl.style.display = "flex";
+        }
+    }
+    closeAboutModal() {
+        if (this.aboutModalEl) {
+            this.aboutModalEl.style.display = "none";
+        }
+    }
     closeAllModals() {
         if (this.settingsModalEl)
             this.settingsModalEl.style.display = "none";
@@ -928,6 +1078,8 @@ export class UIManager {
             this.mobileLibraryModalEl.style.display = "none";
         if (this.generatorStylesModalEl)
             this.generatorStylesModalEl.style.display = "none";
+        if (this.aboutModalEl)
+            this.aboutModalEl.style.display = "none";
     }
     renderGeneratorStylesModal() {
         if (!this.generatorStylesGridEl || !this.generatorCategoryPillsEl)

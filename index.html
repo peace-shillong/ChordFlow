@@ -20,6 +20,14 @@
 
   <link rel="stylesheet" href="css/main.css">
 
+  <!-- PWA Manifest & Icons -->
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="ChordFlow">
+
   <!-- jsPDF CDN for single-script printable PDF export -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
@@ -62,6 +70,10 @@
         <button id="btn-open-tuner" class="icon-btn header-action-btn" title="Instrument Tuner (🎯)"
           aria-label="Open Tuner">
           🎯
+        </button>
+        <button id="btn-open-about" class="icon-btn header-action-btn" title="About ChordFlow & Shortcuts (ℹ️)"
+          aria-label="Open About Modal">
+          ℹ️
         </button>
 
         <!-- Theme Toggle -->
@@ -445,6 +457,23 @@
             </button>
           </div>
         </div>
+
+        <!-- PWA Installation Section -->
+        <div class="control-group-modal pwa-install-group" id="pwa-install-group">
+          <div class="pwa-install-card">
+            <div class="pwa-install-info-row">
+              <span class="pwa-install-icon">📱</span>
+              <div class="pwa-install-text-group">
+                <h5 class="pwa-install-title">Install ChordFlow App</h5>
+                <p class="pwa-install-desc" id="pwa-install-status-text">Install as a standalone PWA for offline practice and zero latency.</p>
+              </div>
+            </div>
+            <button type="button" class="btn pwa-install-btn" id="btn-install-pwa">
+              <span>⬇️</span>
+              <span>Install App</span>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -595,6 +624,194 @@
             <span>Generate Progression</span>
           </button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. About App Modal -->
+  <div id="about-modal" class="modal-backdrop" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="about-modal-title">
+    <div class="glass-panel modal-card modal-card-large about-modal-card">
+      <div class="modal-header">
+        <div class="modal-header-left">
+          <div class="about-brand-row">
+            <span class="about-brand-logo">🎵</span>
+            <h3 id="about-modal-title" class="modal-title">About ChordFlow</h3>
+            <span class="about-version-badge">v1.0.0 PWA</span>
+          </div>
+          <p class="modal-subtitle">Interactive Multi-Instrument Chord Studio & Progression Builder</p>
+        </div>
+        <button class="modal-close-btn" id="btn-close-about" title="Close (Esc)">✕</button>
+      </div>
+
+      <div class="modal-body about-modal-body">
+        <!-- Overview Section -->
+        <div class="about-section">
+          <h4 class="about-section-title">🌟 Overview</h4>
+          <p class="about-description">
+            <strong>ChordFlow</strong> is a professional, high-performance Web Audio Single Page Application designed for musicians, songwriters, producers, and students. It enables instant chord exploration across 7 acoustic & electric instruments, customizable voicing diagrams, intelligent chord progression building with 16 world-class formulas, custom 16-step strumming pattern sequencing, a real-time chromatic pitch tuner, and interactive music theory visualization.
+          </p>
+        </div>
+
+        <!-- Feature Matrix Grid -->
+        <div class="about-section">
+          <h4 class="about-section-title">🚀 Core Capabilities & Features</h4>
+          <div class="about-features-grid">
+            <div class="about-feature-card">
+              <div class="about-feature-icon">🎸</div>
+              <div class="about-feature-info">
+                <h5>7 Realistic Instruments</h5>
+                <p>Guitar (Standard EADGBE), Piano (88-key mapped), Ukulele (GCEA), Guitalele (ADGCEA), Violin (GDAE), Bass (EADG), and 10-Hole Diatonic Harmonica in C.</p>
+              </div>
+            </div>
+
+            <div class="about-feature-card">
+              <div class="about-feature-icon">🎼</div>
+              <div class="about-feature-info">
+                <h5>144 Interactive Chords & Voicings</h5>
+                <p>Major, Minor, 7th, Maj7, m7, Diminished, Augmented, Sus2, Sus4, 6th, m6, and Add9 across all 12 chromatic root notes with multiple voicing variations.</p>
+              </div>
+            </div>
+
+            <div class="about-feature-card">
+              <div class="about-feature-icon">⚡</div>
+              <div class="about-feature-info">
+                <h5>Progression Formulas & Tempo Match</h5>
+                <p>16 auto-generation formulas including Japanese City Pop / Royal Road (王道進行), Just The Two of Us (丸サ進行), J-Rock Drive, Circle of Fifths cycles, Neo-Soul, Blues, and Flamenco with style-matched tempo and strum patterns.</p>
+              </div>
+            </div>
+
+            <div class="about-feature-card">
+              <div class="about-feature-icon">🥁</div>
+              <div class="about-feature-info">
+                <h5>16-Step Strumming Sequencer</h5>
+                <p>Interactive 16-subdivision rhythmic grid editor with down-strums (↓), up-strums (↑), mutes (x), and accents, accompanied by a real-time synchronized playback ticker.</p>
+              </div>
+            </div>
+
+            <div class="about-feature-card">
+              <div class="about-feature-icon">🎯</div>
+              <div class="about-feature-info">
+                <h5>Real-Time Chromatic Tuner</h5>
+                <p>Microphone pitch-detection engine with high-precision YIN / autocorrelation algorithm, dynamic cent deviation meter, string selection buttons, and automatic 3-strike string advance.</p>
+              </div>
+            </div>
+
+            <div class="about-feature-card">
+              <div class="about-feature-icon">🎡</div>
+              <div class="about-feature-info">
+                <h5>Circle of Fifths & Modal Theory</h5>
+                <p>Interactive 12-key Circle of Fifths with diatonic chord highlighting (I, ii, iii, IV, V, vi, vii°), borrowed modal chords, Roman numeral analysis, and scale degree formula viewer.</p>
+              </div>
+            </div>
+
+            <div class="about-feature-card">
+              <div class="about-feature-icon">🎛️</div>
+              <div class="about-feature-info">
+                <h5>Dual Modes & Audio Synthesis</h5>
+                <p>Seamlessly toggle between <em>Clean Mode</em> (streamlined 8-chord workflow) and <em>Advanced Mode</em> (16-chord capacity, voicings, inversion filters, custom Low-Pass/High-Pass/Decay sound design sliders).</p>
+              </div>
+            </div>
+
+            <div class="about-feature-card">
+              <div class="about-feature-icon">📄</div>
+              <div class="about-feature-info">
+                <h5>Export & Offline PWA</h5>
+                <p>Export progressions to Printable PDF Chord Charts (jsPDF), MIDI files, JSON, or copyable text. Works 100% offline with zero network latency.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Keyboard Shortcuts Reference Table -->
+        <div class="about-section">
+          <h4 class="about-section-title">⌨️ Keyboard Shortcuts Cheatsheet</h4>
+          <div class="about-shortcuts-table-wrapper">
+            <table class="about-shortcuts-table">
+              <thead>
+                <tr>
+                  <th>Key / Shortcut</th>
+                  <th>Action</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><kbd>Space</kbd></td>
+                  <td><strong>Play / Pause</strong></td>
+                  <td>Start or pause the chord progression sequencer playback</td>
+                </tr>
+                <tr>
+                  <td><kbd>Enter</kbd></td>
+                  <td><strong>Play Chord</strong></td>
+                  <td>Strum / audition the currently active chord with audio synthesis</td>
+                </tr>
+                <tr>
+                  <td><kbd>1</kbd> – <kbd>8</kbd></td>
+                  <td><strong>Trigger Chord Card</strong></td>
+                  <td>Directly select and play progression chord step 1 through 8</td>
+                </tr>
+                <tr>
+                  <td><kbd>Shift</kbd> + <kbd>1</kbd>–<kbd>8</kbd></td>
+                  <td><strong>Down-Up Strum</strong></td>
+                  <td>Play chord step with a rapid down-up strum sequence</td>
+                </tr>
+                <tr>
+                  <td><kbd>←</kbd> / <kbd>→</kbd></td>
+                  <td><strong>Step / Octave</strong></td>
+                  <td>Navigate active chord (or scroll Piano keyboard ±1 octave)</td>
+                </tr>
+                <tr>
+                  <td><kbd>?</kbd> or <kbd>A</kbd></td>
+                  <td><strong>About & Shortcuts</strong></td>
+                  <td>Open this About ChordFlow & Shortcuts documentation modal</td>
+                </tr>
+                <tr>
+                  <td><kbd>T</kbd></td>
+                  <td><strong>Tuner</strong></td>
+                  <td>Open the real-time Chromatic Instrument Tuner modal</td>
+                </tr>
+                <tr>
+                  <td><kbd>M</kbd></td>
+                  <td><strong>Music Theory</strong></td>
+                  <td>Open the Circle of Fifths & Music Theory modal</td>
+                </tr>
+                <tr>
+                  <td><kbd>S</kbd></td>
+                  <td><strong>Settings</strong></td>
+                  <td>Open Instrument & Audio Synthesis settings modal</td>
+                </tr>
+                <tr>
+                  <td><kbd>Esc</kbd></td>
+                  <td><strong>Close Modals</strong></td>
+                  <td>Instantly dismiss any open modal window</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Tech Stack & Credits -->
+        <div class="about-section about-meta-section">
+          <div class="about-meta-grid">
+            <div>
+              <span class="about-meta-label">Architecture</span>
+              <p class="about-meta-value">Pure TypeScript (ES2022), Web Audio API, HTML5 Canvas 2D, Modern Vanilla CSS3</p>
+            </div>
+            <div>
+              <span class="about-meta-label">Offline Engine</span>
+              <p class="about-meta-value">Progressive Web App (PWA) with Service Worker Asset Pre-Caching</p>
+            </div>
+            <div>
+              <span class="about-meta-label">Export Libraries</span>
+              <p class="about-meta-value">jsPDF Vector PDF Generator, Standard MIDI Format 0 Encoder</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer about-modal-footer">
+        <span class="about-footer-tagline">Crafted for songwriters, performers, and students worldwide 🎶</span>
+        <button type="button" class="btn btn-primary btn-close-about-footer" id="btn-close-about-footer">Got It</button>
       </div>
     </div>
   </div>
