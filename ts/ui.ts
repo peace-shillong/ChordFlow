@@ -1,45 +1,92 @@
-import { AppState, Chord, InstrumentId, ChordQuality } from "./types.js";
+import { AppState, Chord, InstrumentId, ChordQuality, DisplayView } from "./types.js";
 import { ChordDatabase, getCapoSoundingRoot, getScaleDegree, GENERATOR_STYLES } from "./chord.js";
-import { audio } from "./audio.js";
+import { audio, SOUND_PRESETS } from "./audio.js";
 import { diagrams } from "./diagrams.js";
 import { progression } from "./progression.js";
 import { circleOfFifths } from "./circle.js";
 import { exporter } from "./export.js";
+import { tuner } from "./tuner.js";
 
 export class UIManager {
   private db: ChordDatabase;
   private state: AppState;
 
-  // DOM references
+  // Root & Header Elements
   private appRoot!: HTMLElement;
+  private toastEl!: HTMLElement;
+
+  // Modals Elements
+  private settingsModalEl!: HTMLElement;
+  private theoryModalEl!: HTMLElement;
+  private tunerModalEl!: HTMLElement;
+  private mobileLibraryModalEl!: HTMLElement;
+  private mobileLibraryContainerEl!: HTMLElement;
+
+  // Main Progression Elements
+  private progressionTitleInputEl!: HTMLInputElement;
+  private progressionCounterBadgeEl!: HTMLElement;
+  private progressionCardsEl!: HTMLElement;
+  private nextChordEl!: HTMLElement;
+  private presetSelectEl!: HTMLSelectElement;
+  private saveDropdownMenuEl!: HTMLElement;
+
+  // Transport & Volume Controls
+  private playBtnEl!: HTMLButtonElement;
+  private loopBtnEl!: HTMLButtonElement;
+  private metronomeBtnEl!: HTMLButtonElement;
+  private tempoSliderEl!: HTMLInputElement;
+  private tempoValueEl!: HTMLElement;
+  private volumeSliderEl!: HTMLInputElement;
+  private volumeValueEl!: HTMLElement;
+  private volumeIconBtnEl!: HTMLElement;
+
+  // Strum Visualizers
+  private strumTickerEl!: HTMLElement;
+  private strumEditorContainerEl!: HTMLElement;
+  private strumEditorGridEl!: HTMLElement;
+
+  // Right Column: Chord Preview & Canvas
   private mainCanvas!: HTMLCanvasElement;
   private chordTitleEl!: HTMLElement;
   private chordSubtitleEl!: HTMLElement;
   private chordNotesEl!: HTMLElement;
-  private nextChordEl!: HTMLElement;
-  private progressionCardsEl!: HTMLElement;
+  private voicingSelectEl!: HTMLSelectElement;
+  private viewChordBtnEl!: HTMLButtonElement;
+  private viewNotesBtnEl!: HTMLButtonElement;
+  private inversionContainerEl!: HTMLElement;
+
+  // Left Column: Chord Library & Search
   private chordGridEl!: HTMLElement;
   private rootFilterEl!: HTMLElement;
   private qualityFilterEl!: HTMLSelectElement;
   private searchInputEl!: HTMLInputElement;
+
+  // Progression Generator
+  private generatorTargetEl!: HTMLElement;
+  private generatorStyleSelectEl!: HTMLSelectElement;
+  private btnGenerateEl!: HTMLButtonElement;
+
+  // Settings Modal Controls
   private capoSliderEl!: HTMLInputElement;
   private capoValueEl!: HTMLElement;
   private tuningSelectEl!: HTMLSelectElement;
   private strumSelectEl!: HTMLSelectElement;
-  private strumTickerEl!: HTMLElement;
-  private tempoSliderEl!: HTMLInputElement;
-  private tempoValueEl!: HTMLElement;
-  private playBtnEl!: HTMLButtonElement;
-  private loopBtnEl!: HTMLButtonElement;
-  private metronomeBtnEl!: HTMLButtonElement;
-  private presetSelectEl!: HTMLSelectElement;
-  private inversionContainerEl!: HTMLElement;
-  private advancedDrawerEl!: HTMLElement;
+  private soundPresetSelectEl!: HTMLSelectElement;
 
-  // Progression Generator references
-  private generatorTargetEl!: HTMLElement;
-  private generatorStyleSelectEl!: HTMLSelectElement;
-  private btnGenerateEl!: HTMLButtonElement;
+  // Audio Synthesis Sliders
+  private sliderLpfEl!: HTMLInputElement;
+  private valLpfEl!: HTMLElement;
+  private sliderHpfEl!: HTMLInputElement;
+  private valHpfEl!: HTMLElement;
+  private sliderDecayEl!: HTMLInputElement;
+  private valDecayEl!: HTMLElement;
+  private sliderDetuneEl!: HTMLInputElement;
+  private valDetuneEl!: HTMLElement;
+  private sliderReverbEl!: HTMLInputElement;
+  private valReverbEl!: HTMLElement;
+
+  // Custom Strum Pattern State (16 subdivisions)
+  private customStrumSteps: string[] = ["D", "", "D", "U", "", "U", "D", "U", "D", "", "D", "U", "", "U", "D", "U"];
 
   constructor(db: ChordDatabase, initialState: AppState) {
     this.db = db;
@@ -50,14 +97,17 @@ export class UIManager {
     this.cacheElements();
     this.bindEvents();
     this.populateFiltersAndPresets();
+    this.initTuner();
     this.applyTheme(this.state.theme);
     this.applyMode(this.state.mode);
+    this.updateAudioSliders();
     this.renderActiveChord();
     this.renderProgressionCards();
     this.renderChordGrid();
     this.renderStrumTicker();
+    this.renderStrumEditor();
 
-    // Initialize Circle of Fifths
+    // Initialize Circle of Fifths inside Theory Modal
     circleOfFifths.init(
       "circle-of-fifths-container",
       (chordId) => {
@@ -67,6 +117,11 @@ export class UIManager {
         this.addChordToProgression(chordId);
       }
     );
+
+    // Sync Progression Title
+    if (this.progressionTitleInputEl) {
+      this.progressionTitleInputEl.value = progression.getTitle();
+    }
 
     // Subscribe to progression events
     progression.addListener({
@@ -96,38 +151,81 @@ export class UIManager {
 
   private cacheElements(): void {
     this.appRoot = document.getElementById("app")!;
+    this.toastEl = document.getElementById("toast-notification")!;
+
+    // Modals
+    this.settingsModalEl = document.getElementById("settings-modal")!;
+    this.theoryModalEl = document.getElementById("theory-modal")!;
+    this.tunerModalEl = document.getElementById("tuner-modal")!;
+    this.mobileLibraryModalEl = document.getElementById("mobile-library-modal")!;
+    this.mobileLibraryContainerEl = document.getElementById("mobile-library-container")!;
+
+    // Progression Header & Toolbar
+    this.progressionTitleInputEl = document.getElementById("progression-title-input") as HTMLInputElement;
+    this.progressionCounterBadgeEl = document.getElementById("progression-counter-badge")!;
+    this.progressionCardsEl = document.getElementById("progression-cards-strip")!;
+    this.nextChordEl = document.getElementById("next-chord-preview")!;
+    this.presetSelectEl = document.getElementById("preset-progression-select") as HTMLSelectElement;
+    this.saveDropdownMenuEl = document.getElementById("save-dropdown-menu")!;
+
+    // Transport Controls
+    this.playBtnEl = document.getElementById("btn-play-progression") as HTMLButtonElement;
+    this.loopBtnEl = document.getElementById("btn-toggle-loop") as HTMLButtonElement;
+    this.metronomeBtnEl = document.getElementById("btn-toggle-metronome") as HTMLButtonElement;
+    this.tempoSliderEl = document.getElementById("tempo-slider") as HTMLInputElement;
+    this.tempoValueEl = document.getElementById("tempo-value-display")!;
+    this.volumeSliderEl = document.getElementById("volume-slider") as HTMLInputElement;
+    this.volumeValueEl = document.getElementById("volume-value-display")!;
+    this.volumeIconBtnEl = document.getElementById("volume-icon-btn")!;
+
+    // Strum Visualizers
+    this.strumTickerEl = document.getElementById("strum-visualizer-ticker")!;
+    this.strumEditorContainerEl = document.getElementById("strum-pattern-editor-container")!;
+    this.strumEditorGridEl = document.getElementById("strum-editor-grid")!;
+
+    // Chord Preview & Diagram
     this.mainCanvas = document.getElementById("main-diagram-canvas") as HTMLCanvasElement;
     this.chordTitleEl = document.getElementById("active-chord-title")!;
     this.chordSubtitleEl = document.getElementById("active-chord-subtitle")!;
     this.chordNotesEl = document.getElementById("active-chord-notes")!;
-    this.nextChordEl = document.getElementById("next-chord-preview")!;
-    this.progressionCardsEl = document.getElementById("progression-cards-strip")!;
+    this.voicingSelectEl = document.getElementById("chord-voicing-select") as HTMLSelectElement;
+    this.viewChordBtnEl = document.getElementById("btn-view-chord") as HTMLButtonElement;
+    this.viewNotesBtnEl = document.getElementById("btn-view-notes") as HTMLButtonElement;
+    this.inversionContainerEl = document.getElementById("inversion-pills-container")!;
+
+    // Chord Library & Search
     this.chordGridEl = document.getElementById("chord-library-grid")!;
     this.rootFilterEl = document.getElementById("root-filter-container")!;
     this.qualityFilterEl = document.getElementById("quality-filter-select") as HTMLSelectElement;
     this.searchInputEl = document.getElementById("chord-search-input") as HTMLInputElement;
+
+    // Progression Generator
+    this.generatorTargetEl = document.getElementById("generator-target-chord")!;
+    this.generatorStyleSelectEl = document.getElementById("generator-style-select") as HTMLSelectElement;
+    this.btnGenerateEl = document.getElementById("btn-generate-progression") as HTMLButtonElement;
+
+    // Settings Modal Controls
     this.capoSliderEl = document.getElementById("capo-slider") as HTMLInputElement;
     this.capoValueEl = document.getElementById("capo-value-display")!;
     this.tuningSelectEl = document.getElementById("tuning-select") as HTMLSelectElement;
     this.strumSelectEl = document.getElementById("strum-pattern-select") as HTMLSelectElement;
-    this.strumTickerEl = document.getElementById("strum-visualizer-ticker")!;
-    this.tempoSliderEl = document.getElementById("tempo-slider") as HTMLInputElement;
-    this.tempoValueEl = document.getElementById("tempo-value-display")!;
-    this.playBtnEl = document.getElementById("btn-play-progression") as HTMLButtonElement;
-    this.loopBtnEl = document.getElementById("btn-toggle-loop") as HTMLButtonElement;
-    this.metronomeBtnEl = document.getElementById("btn-toggle-metronome") as HTMLButtonElement;
-    this.presetSelectEl = document.getElementById("preset-progression-select") as HTMLSelectElement;
-    this.inversionContainerEl = document.getElementById("inversion-pills-container")!;
-    this.advancedDrawerEl = document.getElementById("advanced-settings-drawer")!;
+    this.soundPresetSelectEl = document.getElementById("sound-preset-select") as HTMLSelectElement;
 
-    // Progression Generator Elements
-    this.generatorTargetEl = document.getElementById("generator-target-chord")!;
-    this.generatorStyleSelectEl = document.getElementById("generator-style-select") as HTMLSelectElement;
-    this.btnGenerateEl = document.getElementById("btn-generate-progression") as HTMLButtonElement;
+    // Audio Synthesis Sliders
+    this.sliderLpfEl = document.getElementById("slider-lpf") as HTMLInputElement;
+    this.valLpfEl = document.getElementById("val-lpf")!;
+    this.sliderHpfEl = document.getElementById("slider-hpf") as HTMLInputElement;
+    this.valHpfEl = document.getElementById("val-hpf")!;
+    this.sliderDecayEl = document.getElementById("slider-decay") as HTMLInputElement;
+    this.valDecayEl = document.getElementById("val-decay")!;
+    this.sliderDetuneEl = document.getElementById("slider-detune") as HTMLInputElement;
+    this.valDetuneEl = document.getElementById("val-detune")!;
+    this.sliderReverbEl = document.getElementById("slider-reverb") as HTMLInputElement;
+    this.valReverbEl = document.getElementById("val-reverb")!;
   }
 
   private bindEvents(): void {
-    // Mode toggle
+    // 1. Mode Switcher (Clean vs Advanced)
     document.querySelectorAll(".mode-tab").forEach(tab => {
       tab.addEventListener("click", () => {
         const mode = tab.getAttribute("data-mode") as "clean" | "advanced";
@@ -135,13 +233,16 @@ export class UIManager {
       });
     });
 
-    // Theme toggle
+    // 2. Theme Toggle
     document.getElementById("btn-theme-toggle")?.addEventListener("click", () => {
       const nextTheme = this.state.theme === "dark" ? "light" : this.state.theme === "light" ? "system" : "dark";
       this.setTheme(nextTheme);
     });
 
-    // Instrument segmented tabs
+    // 3. Modals Open / Close
+    this.bindModalEvents();
+
+    // 4. Instrument Tabs (7 Instruments)
     document.querySelectorAll(".instrument-tab").forEach(tab => {
       tab.addEventListener("click", () => {
         const inst = tab.getAttribute("data-instrument") as InstrumentId;
@@ -149,12 +250,98 @@ export class UIManager {
       });
     });
 
-    // Play Chord Button
+    // 5. Progression Title & Toolbar
+    this.progressionTitleInputEl?.addEventListener("input", () => {
+      progression.setTitle(this.progressionTitleInputEl.value);
+    });
+
+    // Copy Progression
+    document.getElementById("btn-copy-progression")?.addEventListener("click", () => {
+      const symbols = progression.getChords().map(id => {
+        const c = this.db.getChordById(id);
+        return c?.symbol || id;
+      });
+      const text = symbols.join(" - ");
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).catch(() => {});
+      }
+      this.showToast("Progression copied to clipboard! 📋");
+    });
+
+    // Save Dropdown Toggle
+    document.getElementById("btn-save-dropdown-toggle")?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const isVisible = this.saveDropdownMenuEl.style.display === "block";
+      this.saveDropdownMenuEl.style.display = isVisible ? "none" : "block";
+    });
+
+    // Close Dropdown on outside click
+    document.addEventListener("click", () => {
+      if (this.saveDropdownMenuEl) {
+        this.saveDropdownMenuEl.style.display = "none";
+      }
+    });
+
+    // Save as JSON
+    document.getElementById("btn-save-json")?.addEventListener("click", () => {
+      exporter.exportJSON(this.state, progression.getTitle());
+      this.showToast("Saved progression as JSON! 💾");
+    });
+
+    // Save as PDF
+    document.getElementById("btn-save-pdf")?.addEventListener("click", () => {
+      const chordObjs = this.state.progression
+        .map(id => this.db.getChordById(id))
+        .filter((c): c is Chord => Boolean(c));
+      const strum = this.db.getStrumPattern(this.state.strumPattern || "");
+      exporter.exportPDF(this.state, chordObjs, strum, progression.getTitle());
+      this.showToast("Exporting printable PDF... 📄");
+    });
+
+    // Save as PNG
+    document.getElementById("btn-save-png")?.addEventListener("click", () => {
+      const chordObjs = this.state.progression
+        .map(id => this.db.getChordById(id))
+        .filter((c): c is Chord => Boolean(c));
+      const strum = this.db.getStrumPattern(this.state.strumPattern || "");
+      exporter.exportPNG(this.state, chordObjs, strum, progression.getTitle());
+      this.showToast("Exporting progression image... 🖼️");
+    });
+
+    // Import Button & Hidden File Picker
+    const fileInput = document.getElementById("json-file-input") as HTMLInputElement;
+    document.getElementById("btn-import-progression")?.addEventListener("click", () => {
+      fileInput.click();
+    });
+
+    fileInput?.addEventListener("change", async () => {
+      if (fileInput.files && fileInput.files[0]) {
+        try {
+          const imported = await exporter.importJSON(fileInput.files[0]);
+          progression.setProgression(imported.progression, imported.tempo, undefined, imported.title);
+          if (imported.title && this.progressionTitleInputEl) {
+            this.progressionTitleInputEl.value = imported.title;
+          }
+          if (imported.activeInstrument) this.setInstrument(imported.activeInstrument);
+          if (typeof imported.capo === "number") {
+            this.state.capo = imported.capo;
+            this.capoSliderEl.value = `${imported.capo}`;
+            this.capoValueEl.textContent = imported.capo === 0 ? "None (0)" : `Fret ${imported.capo}`;
+          }
+          this.showToast("Progression imported successfully! 📂");
+        } catch (err) {
+          alert(`Import failed: ${(err as Error).message}`);
+        }
+        fileInput.value = "";
+      }
+    });
+
+    // 6. Play Active Chord Button
     document.getElementById("btn-play-active-chord")?.addEventListener("click", () => {
       this.playActiveChord();
     });
 
-    // Progression Playback Controls
+    // 7. Progression Playback Transport Controls
     this.playBtnEl?.addEventListener("click", () => {
       progression.togglePlay();
     });
@@ -205,21 +392,50 @@ export class UIManager {
       lastTapTime = now;
     });
 
-    // Capo Slider
+    // Volume Slider & Mute
+    this.volumeSliderEl?.addEventListener("input", () => {
+      const vol = parseInt(this.volumeSliderEl.value, 10) / 100;
+      audio.setVolume(vol);
+      this.volumeValueEl.textContent = `${Math.round(vol * 100)}%`;
+      this.volumeIconBtnEl.textContent = vol === 0 ? "🔇" : vol < 0.5 ? "🔉" : "🔊";
+    });
+
+    this.volumeIconBtnEl?.addEventListener("click", () => {
+      const isMuted = audio.toggleMute();
+      this.volumeIconBtnEl.textContent = isMuted ? "🔇" : "🔊";
+      this.volumeValueEl.textContent = isMuted ? "0%" : `${Math.round(audio.getVolume() * 100)}%`;
+    });
+
+    // 8. Voicing Selector & View Mode Toggle
+    this.voicingSelectEl?.addEventListener("change", () => {
+      this.state.selectedVoicingId = this.voicingSelectEl.value;
+      this.renderActiveChord();
+    });
+
+    this.viewChordBtnEl?.addEventListener("click", () => {
+      this.setDisplayView("chord");
+    });
+
+    this.viewNotesBtnEl?.addEventListener("click", () => {
+      this.setDisplayView("notes");
+    });
+
+    // 9. Capo Slider
     this.capoSliderEl?.addEventListener("input", () => {
       const capo = parseInt(this.capoSliderEl.value, 10);
       this.state.capo = capo;
       this.capoValueEl.textContent = capo === 0 ? "None (0)" : `Fret ${capo}`;
       this.renderActiveChord();
+      this.renderProgressionCards();
     });
 
-    // Tuning Select
+    // 10. Tuning Select
     this.tuningSelectEl?.addEventListener("change", () => {
       this.state.tuning = this.tuningSelectEl.value;
       this.renderActiveChord();
     });
 
-    // Strum Pattern Select
+    // 11. Strum Pattern Select
     this.strumSelectEl?.addEventListener("change", () => {
       this.state.strumPattern = this.strumSelectEl.value;
       const pattern = this.db.getStrumPattern(this.state.strumPattern);
@@ -227,13 +443,16 @@ export class UIManager {
       this.renderStrumTicker();
     });
 
-    // Preset Progressions Select
+    // 12. Preset Progressions Select
     this.presetSelectEl?.addEventListener("change", () => {
       const presetId = this.presetSelectEl.value;
       if (presetId) {
         const p = this.db.getProgression(presetId);
         if (p) {
-          progression.setProgression(p.chords, p.tempo, p.beatsPerChord);
+          progression.setProgression(p.chords, p.tempo, p.beatsPerChord, p.name);
+          if (this.progressionTitleInputEl) {
+            this.progressionTitleInputEl.value = p.name;
+          }
           if (p.strumPatternId) {
             this.strumSelectEl.value = p.strumPatternId;
             this.state.strumPattern = p.strumPatternId;
@@ -244,7 +463,7 @@ export class UIManager {
       }
     });
 
-    // Search and Quality Filter
+    // 13. Search and Quality Filter
     this.searchInputEl?.addEventListener("input", () => {
       this.renderChordGrid();
     });
@@ -253,7 +472,7 @@ export class UIManager {
       this.renderChordGrid();
     });
 
-    // Progression Auto-Generator Button
+    // 14. Progression Auto-Generator Button
     this.btnGenerateEl?.addEventListener("click", () => {
       const selectedChordId = this.state.selectedChord || "Cmaj";
       const styleId = this.generatorStyleSelectEl.value;
@@ -261,15 +480,14 @@ export class UIManager {
       progression.setProgression(newChords);
       this.playActiveChord();
 
-      // Visual feedback
       this.btnGenerateEl.classList.add("btn-pressed");
       setTimeout(() => this.btnGenerateEl.classList.remove("btn-pressed"), 220);
 
-      // Scroll progression into view on mobile
       this.progressionCardsEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      this.showToast("Progression generated! ⚡");
     });
 
-    // Interactive Canvas Note Clicking
+    // 15. Canvas Note Clicking
     const handleCanvasClick = (e: MouseEvent) => {
       const target = diagrams.getClickTarget(this.mainCanvas, e);
       if (target) {
@@ -279,7 +497,16 @@ export class UIManager {
     };
     this.mainCanvas?.addEventListener("click", handleCanvasClick);
 
-    // Advanced Toggles
+    // 16. Sound Presets & Audio Synthesis Sliders
+    this.soundPresetSelectEl?.addEventListener("change", () => {
+      const presetId = this.soundPresetSelectEl.value;
+      audio.setPreset(this.state.activeInstrument, presetId);
+      this.playActiveChord();
+    });
+
+    this.bindAudioSliders();
+
+    // 17. Theory Overlays Checkboxes
     const toggleBindings: [string, keyof typeof this.state.toggles][] = [
       ["toggle-notes", "showNotes"],
       ["toggle-intervals", "showIntervals"],
@@ -296,89 +523,216 @@ export class UIManager {
         this.renderActiveChord();
         this.renderProgressionCards();
         this.renderStrumTicker();
-        const circleSection = document.getElementById("circle-section");
-        if (circleSection) {
-          circleSection.style.display = this.state.toggles.showCircle ? "block" : "none";
-        }
       });
     });
 
-    // Export Buttons
-    document.getElementById("btn-export-json")?.addEventListener("click", () => {
-      exporter.exportJSON(this.state);
-    });
+    // 18. Global Keyboard Shortcuts (Number Keys 1–8, Space, Enter, Arrows)
+    this.bindKeyboardShortcuts();
 
-    document.getElementById("btn-export-png")?.addEventListener("click", () => {
-      const chordObjs = this.state.progression
-        .map(id => this.db.getChordById(id))
-        .filter((c): c is Chord => Boolean(c));
-      const strum = this.db.getStrumPattern(this.state.strumPattern || "");
-      exporter.exportPNG(this.state, chordObjs, strum);
-    });
-
-    document.getElementById("btn-export-pdf")?.addEventListener("click", () => {
-      const chordObjs = this.state.progression
-        .map(id => this.db.getChordById(id))
-        .filter((c): c is Chord => Boolean(c));
-      const strum = this.db.getStrumPattern(this.state.strumPattern || "");
-      exporter.exportPDF(this.state, chordObjs, strum);
-    });
-
-    // Import Button & Hidden File Picker
-    const fileInput = document.getElementById("json-file-input") as HTMLInputElement;
-    document.getElementById("btn-import-json")?.addEventListener("click", () => {
-      fileInput.click();
-    });
-
-    fileInput?.addEventListener("change", async () => {
-      if (fileInput.files && fileInput.files[0]) {
-        try {
-          const imported = await exporter.importJSON(fileInput.files[0]);
-          progression.setProgression(imported.progression, imported.tempo);
-          if (imported.activeInstrument) this.setInstrument(imported.activeInstrument);
-          if (typeof imported.capo === "number") {
-            this.state.capo = imported.capo;
-            this.capoSliderEl.value = `${imported.capo}`;
-            this.capoValueEl.textContent = imported.capo === 0 ? "None (0)" : `Fret ${imported.capo}`;
-          }
-          alert("Progression imported successfully!");
-        } catch (err) {
-          alert(`Import failed: ${(err as Error).message}`);
-        }
-        fileInput.value = "";
-      }
-    });
-
-    // Global Keyboard Shortcuts
-    window.addEventListener("keydown", (e) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement) return;
-
-      if (e.code === "Space") {
-        e.preventDefault();
-        progression.togglePlay();
-      } else if (e.code === "Enter") {
-        e.preventDefault();
-        this.playActiveChord();
-      } else if (e.code === "ArrowLeft") {
-        e.preventDefault();
-        const prevIdx = (this.state.activeChordIndex - 1 + this.state.progression.length) % this.state.progression.length;
-        progression.setActiveIndex(prevIdx);
-      } else if (e.code === "ArrowRight") {
-        e.preventDefault();
-        const nextIdx = (this.state.activeChordIndex + 1) % this.state.progression.length;
-        progression.setActiveIndex(nextIdx);
-      }
-    });
-
-    // Responsive window resize
+    // 19. Responsive window resize
     window.addEventListener("resize", () => {
       this.renderActiveChord();
     });
   }
 
+  private bindModalEvents(): void {
+    // Settings Modal
+    document.getElementById("btn-open-settings")?.addEventListener("click", () => {
+      if (this.settingsModalEl) this.settingsModalEl.style.display = "flex";
+      this.updateAudioSliders();
+    });
+    document.getElementById("btn-close-settings")?.addEventListener("click", () => {
+      if (this.settingsModalEl) this.settingsModalEl.style.display = "none";
+    });
+    this.settingsModalEl?.addEventListener("click", (e) => {
+      if (e.target === this.settingsModalEl) this.settingsModalEl.style.display = "none";
+    });
+
+    // Theory Modal
+    document.getElementById("btn-open-theory")?.addEventListener("click", () => {
+      if (this.theoryModalEl) this.theoryModalEl.style.display = "flex";
+      circleOfFifths.render();
+    });
+    document.getElementById("btn-close-theory")?.addEventListener("click", () => {
+      if (this.theoryModalEl) this.theoryModalEl.style.display = "none";
+    });
+    this.theoryModalEl?.addEventListener("click", (e) => {
+      if (e.target === this.theoryModalEl) this.theoryModalEl.style.display = "none";
+    });
+
+    // Tuner Modal
+    document.getElementById("btn-open-tuner")?.addEventListener("click", () => {
+      tuner.open();
+    });
+    document.getElementById("btn-close-tuner")?.addEventListener("click", () => {
+      tuner.close();
+    });
+    this.tunerModalEl?.addEventListener("click", (e) => {
+      if (e.target === this.tunerModalEl) tuner.close();
+    });
+
+    // Mobile Library Modal
+    document.getElementById("btn-mobile-open-library")?.addEventListener("click", () => {
+      this.openMobileLibrary();
+    });
+    document.getElementById("btn-close-mobile-library")?.addEventListener("click", () => {
+      if (this.mobileLibraryModalEl) this.mobileLibraryModalEl.style.display = "none";
+    });
+    this.mobileLibraryModalEl?.addEventListener("click", (e) => {
+      if (e.target === this.mobileLibraryModalEl) this.mobileLibraryModalEl.style.display = "none";
+    });
+  }
+
+  private openMobileLibrary(): void {
+    if (!this.mobileLibraryModalEl || !this.mobileLibraryContainerEl) return;
+    this.mobileLibraryModalEl.style.display = "flex";
+
+    // Clone or render chord library inside mobile container
+    this.mobileLibraryContainerEl.innerHTML = "";
+    const allChords = this.db.getAllChords();
+    const grid = document.createElement("div");
+    grid.className = "chord-grid";
+
+    allChords.forEach(chord => {
+      const card = document.createElement("div");
+      card.className = `lib-chord-card ${chord.id === this.state.selectedChord ? "selected" : ""}`;
+      card.innerHTML = `
+        <div class="lib-chord-symbol">${chord.symbol}</div>
+        <div class="lib-chord-name">${chord.name}</div>
+        <button class="lib-add-btn" title="Add to Progression">+</button>
+      `;
+
+      card.addEventListener("click", () => {
+        this.selectChord(chord.id);
+        this.mobileLibraryModalEl.style.display = "none";
+      });
+
+      card.querySelector(".lib-add-btn")?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        this.addChordToProgression(chord.id);
+        this.mobileLibraryModalEl.style.display = "none";
+      });
+
+      grid.appendChild(card);
+    });
+
+    this.mobileLibraryContainerEl.appendChild(grid);
+  }
+
+  private bindAudioSliders(): void {
+    const updateAudio = () => {
+      const inst = this.state.activeInstrument;
+      const lpf = parseInt(this.sliderLpfEl.value, 10);
+      const hpf = parseInt(this.sliderHpfEl.value, 10);
+      const decay = parseFloat(this.sliderDecayEl.value);
+      const detune = parseInt(this.sliderDetuneEl.value, 10);
+      const reverb = parseInt(this.sliderReverbEl.value, 10) / 100;
+
+      this.valLpfEl.textContent = `${lpf} Hz`;
+      this.valHpfEl.textContent = `${hpf} Hz`;
+      this.valDecayEl.textContent = `${decay.toFixed(1)} s`;
+      this.valDetuneEl.textContent = `${detune > 0 ? "+" : ""}${detune} cents`;
+      this.valReverbEl.textContent = `${Math.round(reverb * 100)}%`;
+
+      audio.setAudioSettings(inst, { lpf, hpf, decay, detune, reverb });
+    };
+
+    this.sliderLpfEl?.addEventListener("input", updateAudio);
+    this.sliderHpfEl?.addEventListener("input", updateAudio);
+    this.sliderDecayEl?.addEventListener("input", updateAudio);
+    this.sliderDetuneEl?.addEventListener("input", updateAudio);
+    this.sliderReverbEl?.addEventListener("input", updateAudio);
+  }
+
+  private updateAudioSliders(): void {
+    const settings = audio.getAudioSettings(this.state.activeInstrument);
+    if (this.sliderLpfEl) {
+      this.sliderLpfEl.value = `${settings.lpf}`;
+      this.valLpfEl.textContent = `${settings.lpf} Hz`;
+    }
+    if (this.sliderHpfEl) {
+      this.sliderHpfEl.value = `${settings.hpf}`;
+      this.valHpfEl.textContent = `${settings.hpf} Hz`;
+    }
+    if (this.sliderDecayEl) {
+      this.sliderDecayEl.value = `${settings.decay}`;
+      this.valDecayEl.textContent = `${settings.decay.toFixed(1)} s`;
+    }
+    if (this.sliderDetuneEl) {
+      this.sliderDetuneEl.value = `${settings.detune}`;
+      this.valDetuneEl.textContent = `${settings.detune > 0 ? "+" : ""}${settings.detune} cents`;
+    }
+    if (this.sliderReverbEl) {
+      this.sliderReverbEl.value = `${Math.round(settings.reverb * 100)}`;
+      this.valReverbEl.textContent = `${Math.round(settings.reverb * 100)}%`;
+    }
+  }
+
+  private bindKeyboardShortcuts(): void {
+    window.addEventListener("keydown", (e) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement) return;
+
+      // Space = Toggle Play / Pause
+      if (e.code === "Space") {
+        e.preventDefault();
+        progression.togglePlay();
+        return;
+      }
+
+      // Enter = Play Active Chord
+      if (e.code === "Enter") {
+        e.preventDefault();
+        this.playActiveChord();
+        return;
+      }
+
+      // Arrow Left / Right = Step Progression
+      if (e.code === "ArrowLeft") {
+        e.preventDefault();
+        const chords = progression.getChords();
+        if (chords.length > 0) {
+          const prevIdx = (this.state.activeChordIndex - 1 + chords.length) % chords.length;
+          progression.setActiveIndex(prevIdx);
+        }
+        return;
+      } else if (e.code === "ArrowRight") {
+        e.preventDefault();
+        const chords = progression.getChords();
+        if (chords.length > 0) {
+          const nextIdx = (this.state.activeChordIndex + 1) % chords.length;
+          progression.setActiveIndex(nextIdx);
+        }
+        return;
+      }
+
+      // Number Keys 1–8 (and 9, 0)
+      const numMatch = e.code.match(/^(?:Digit|Numpad)([1-9]|0)$/);
+      if (numMatch) {
+        let num = parseInt(numMatch[1], 10);
+        if (num === 0) num = 10;
+        const index = num - 1;
+        const chords = progression.getChords();
+        if (index < chords.length) {
+          e.preventDefault();
+          const chordId = chords[index];
+          this.state.activeChordIndex = index;
+          this.state.selectedChord = chordId;
+          progression.setActiveIndex(index);
+
+          const direction = e.shiftKey ? "up" : "down";
+          this.playChordById(chordId, direction);
+        }
+      }
+    });
+  }
+
+  private initTuner(): void {
+    tuner.init();
+  }
+
   private populateFiltersAndPresets(): void {
     // 1. Root pills
-    const roots = ["All", "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+    const roots = ["All", "C", "D", "E", "F", "G", "A", "B", "C#", "D#", "E#", "F#", "G#", "A#", "B#"];
     this.rootFilterEl.innerHTML = "";
     roots.forEach((root, idx) => {
       const pill = document.createElement("button");
@@ -413,8 +767,9 @@ export class UIManager {
       this.presetSelectEl.appendChild(opt);
     });
 
-    // 4. Tunings
+    // 4. Tunings & Sound Presets
     this.updateTuningsDropdown();
+    this.updateSoundPresetsDropdown();
 
     // 5. Generator Styles
     this.populateGeneratorStyles();
@@ -458,10 +813,24 @@ export class UIManager {
     }
   }
 
+  private updateSoundPresetsDropdown(): void {
+    if (!this.soundPresetSelectEl) return;
+    const presets = SOUND_PRESETS[this.state.activeInstrument] || [];
+    this.soundPresetSelectEl.innerHTML = "";
+    presets.forEach(p => {
+      const opt = document.createElement("option");
+      opt.value = p.id;
+      opt.textContent = p.label;
+      this.soundPresetSelectEl.appendChild(opt);
+    });
+    this.soundPresetSelectEl.value = audio.getPreset(this.state.activeInstrument);
+  }
+
   // --- Theme & Mode Switching ---
 
   public setMode(mode: "clean" | "advanced"): void {
     this.state.mode = mode;
+    progression.setMaxChords(mode === "clean" ? 8 : 16);
     this.applyMode(mode);
   }
 
@@ -474,18 +843,18 @@ export class UIManager {
     this.appRoot.classList.toggle("mode-advanced", isAdvanced);
     this.appRoot.classList.toggle("mode-clean", !isAdvanced);
 
-    if (this.advancedDrawerEl) {
-      this.advancedDrawerEl.style.display = isAdvanced ? "block" : "none";
+    if (this.strumEditorContainerEl) {
+      this.strumEditorContainerEl.style.display = isAdvanced ? "block" : "none";
     }
 
-    const circleSection = document.getElementById("circle-section");
-    if (circleSection) {
-      circleSection.style.display = isAdvanced && this.state.toggles.showCircle ? "block" : "none";
+    const soundGroup = document.querySelector(".sound-preset-group") as HTMLElement;
+    if (soundGroup) {
+      soundGroup.style.display = isAdvanced ? "block" : "none";
     }
 
-    const controlsSection = document.getElementById("advanced-controls-bar");
-    if (controlsSection) {
-      controlsSection.style.display = isAdvanced ? "grid" : "none";
+    const audioSliders = document.querySelector(".custom-audio-sliders-panel") as HTMLElement;
+    if (audioSliders) {
+      audioSliders.style.display = isAdvanced ? "block" : "none";
     }
 
     this.renderActiveChord();
@@ -522,15 +891,24 @@ export class UIManager {
       tab.classList.toggle("active", tab.getAttribute("data-instrument") === inst);
     });
 
-    // Hide or show Capo control (only Guitar and Ukulele)
+    // Capo control group (Guitar, Ukulele, Guitalele)
     const capoRow = document.getElementById("capo-control-group");
     if (capoRow) {
-      capoRow.style.display = (inst === "guitar" || inst === "ukulele") ? "flex" : "none";
+      capoRow.style.display = (inst === "guitar" || inst === "ukulele" || inst === "guitalele") ? "flex" : "none";
     }
 
     this.updateTuningsDropdown();
+    this.updateSoundPresetsDropdown();
+    this.updateAudioSliders();
     this.renderActiveChord();
     this.renderProgressionCards();
+  }
+
+  public setDisplayView(view: DisplayView): void {
+    this.state.displayView = view;
+    this.viewChordBtnEl?.classList.toggle("active", view === "chord");
+    this.viewNotesBtnEl?.classList.toggle("active", view === "notes");
+    this.renderActiveChord();
   }
 
   public selectChord(chordId: string, updateActiveProgressionSlot: boolean = true): void {
@@ -552,7 +930,8 @@ export class UIManager {
   public addChordToProgression(chordId: string): void {
     const success = progression.addChord(chordId);
     if (!success) {
-      alert("Progression limit reached (maximum 7 chords).");
+      const max = this.state.mode === "clean" ? 8 : 16;
+      alert(`Progression limit reached (maximum ${max} chords). Switch to Advanced mode for up to 16 chords.`);
     } else {
       this.state.selectedChord = chordId;
       this.state.selectedInversionIndex = 0;
@@ -572,7 +951,7 @@ export class UIManager {
     this.chordTitleEl.textContent = chord.symbol;
 
     let capoInfo = "";
-    if (this.state.capo > 0 && (this.state.activeInstrument === "guitar" || this.state.activeInstrument === "ukulele")) {
+    if (this.state.capo > 0 && (this.state.activeInstrument === "guitar" || this.state.activeInstrument === "ukulele" || this.state.activeInstrument === "guitalele")) {
       const soundingRoot = getCapoSoundingRoot(chord.root, this.state.capo);
       capoInfo = ` • Sounds as ${soundingRoot}${chord.symbol.replace(chord.root, "")} (Capo ${this.state.capo})`;
     }
@@ -580,10 +959,13 @@ export class UIManager {
     this.chordSubtitleEl.textContent = `${chord.name}${capoInfo}`;
     this.chordNotesEl.textContent = `Notes: ${chord.notes.join(" - ")} | Scale: ${chord.scale}`;
 
-    // Update Progression Generator starting chord badge
+    // Update Progression Generator target badge
     if (this.generatorTargetEl) {
       this.generatorTargetEl.textContent = `${chord.name} (${chord.symbol})`;
     }
+
+    // Populate Voicings Dropdown
+    this.populateVoicingsDropdown(chord);
 
     // Inversions
     this.renderInversionPills(chord);
@@ -603,8 +985,33 @@ export class UIManager {
       tuningStrings,
       toggles: this.state.toggles,
       theme: isDark ? "dark" : "light",
-      inversionIndex: this.state.selectedInversionIndex
+      inversionIndex: this.state.selectedInversionIndex,
+      voicingId: this.state.selectedVoicingId || "open",
+      viewMode: this.state.displayView || "chord"
     });
+  }
+
+  private populateVoicingsDropdown(chord: Chord): void {
+    if (!this.voicingSelectEl) return;
+    this.voicingSelectEl.innerHTML = "";
+
+    const voicings: { id: string; label: string }[] = chord.voicings?.map(v => ({ id: v.id, label: v.label })) || [
+      { id: "open", label: "Open Position" },
+      { id: "barre_e", label: "Barre (E-Shape)" },
+      { id: "barre_a", label: "Barre (A-Shape)" },
+      { id: "spread", label: "Spread / Jazz Voicing" }
+    ];
+
+    voicings.forEach(v => {
+      const opt = document.createElement("option");
+      opt.value = v.id;
+      opt.textContent = v.label;
+      this.voicingSelectEl.appendChild(opt);
+    });
+
+    if (this.state.selectedVoicingId) {
+      this.voicingSelectEl.value = this.state.selectedVoicingId;
+    }
   }
 
   private renderInversionPills(chord: Chord): void {
@@ -633,7 +1040,13 @@ export class UIManager {
 
   public renderProgressionCards(): void {
     const chords = progression.getChords();
+    const maxChords = this.state.mode === "clean" ? 8 : 16;
     this.progressionCardsEl.innerHTML = "";
+
+    // Update counter badge
+    if (this.progressionCounterBadgeEl) {
+      this.progressionCounterBadgeEl.textContent = `${chords.length} / ${maxChords}`;
+    }
 
     chords.forEach((chordId, index) => {
       const chord = this.db.getChordById(chordId);
@@ -668,35 +1081,30 @@ export class UIManager {
         </div>
       `;
 
-      // Select and highlight on card click
       card.addEventListener("click", (e) => {
         const target = e.target as HTMLElement;
         if (target.closest(".prog-remove-btn") || target.closest(".prog-move-btn") || target.closest(".prog-play-card-btn")) {
           return;
         }
         progression.setActiveIndex(index);
-        this.selectChord(chordId);
+        this.selectChord(chordId, false);
       });
 
-      // Remove button
       card.querySelector("[data-remove]")?.addEventListener("click", (e) => {
         e.stopPropagation();
         progression.removeChord(index);
       });
 
-      // Move left
       card.querySelector("[data-move-left]")?.addEventListener("click", (e) => {
         e.stopPropagation();
         progression.moveChord(index, index - 1);
       });
 
-      // Move right
       card.querySelector("[data-move-right]")?.addEventListener("click", (e) => {
         e.stopPropagation();
         progression.moveChord(index, index + 1);
       });
 
-      // Play card
       card.querySelector("[data-play]")?.addEventListener("click", (e) => {
         e.stopPropagation();
         this.playChordById(chordId);
@@ -705,8 +1113,8 @@ export class UIManager {
       this.progressionCardsEl.appendChild(card);
     });
 
-    // Add "+" Card at end if < 7 chords
-    if (chords.length < 7) {
+    // Add "+" Card at end if below max limit
+    if (chords.length < maxChords) {
       const addCard = document.createElement("button");
       addCard.className = "prog-add-card";
       addCard.innerHTML = `<span class="add-icon">+</span><span>Add Chord</span>`;
@@ -725,7 +1133,6 @@ export class UIManager {
       c.classList.toggle("is-next", idx === progression.getNextIndex() && cards.length > 1);
     });
 
-    // Smooth scroll active card into view on mobile
     const activeEl = cards[activeIndex] as HTMLElement;
     if (activeEl) {
       activeEl.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
@@ -814,8 +1221,38 @@ export class UIManager {
     });
   }
 
+  public renderStrumEditor(): void {
+    if (!this.strumEditorGridEl) return;
+    this.strumEditorGridEl.innerHTML = "";
+
+    this.customStrumSteps.forEach((step, idx) => {
+      const cell = document.createElement("button");
+      cell.className = `strum-editor-cell ${step ? "active" : ""}`;
+      cell.innerHTML = `
+        <span class="cell-num">${idx + 1}</span>
+        <span class="cell-val">${step || "—"}</span>
+      `;
+
+      cell.addEventListener("click", () => {
+        // Cycle: D -> U -> D+U -> ""
+        const nextMap: Record<string, string> = { "": "D", "D": "U", "U": "D+U", "D+U": "" };
+        this.customStrumSteps[idx] = nextMap[this.customStrumSteps[idx]] || "";
+        this.renderStrumEditor();
+
+        // Apply to progression
+        progression.setStrumPattern({
+          id: "custom",
+          name: "Custom Pattern",
+          pattern: [...this.customStrumSteps],
+          accent: [0, 4, 8, 12]
+        });
+      });
+
+      this.strumEditorGridEl.appendChild(cell);
+    });
+  }
+
   private animateBeat(beat: number, isAccent: boolean): void {
-    // Pulse metronome indicator
     const metroDot = document.getElementById("metronome-pulse-indicator");
     if (metroDot) {
       metroDot.classList.add("pulse");
@@ -825,7 +1262,6 @@ export class UIManager {
       }, 120);
     }
 
-    // Pulse strum visualizer beat
     const strumBeats = this.strumTickerEl.querySelectorAll(".strum-beat");
     const targetIdx = (beat * 2) % (strumBeats.length || 1);
     strumBeats.forEach((b, idx) => {
@@ -838,7 +1274,7 @@ export class UIManager {
       this.playBtnEl.classList.toggle("playing", this.state.isPlaying);
       this.playBtnEl.innerHTML = this.state.isPlaying
         ? '<span class="btn-icon">⏸</span><span>Pause</span>'
-        : '<span class="btn-icon">▶</span><span>Play Progression</span>';
+        : '<span class="btn-icon">▶</span><span>Play</span>';
     }
   }
 
@@ -847,7 +1283,7 @@ export class UIManager {
     this.playChordById(chordId);
   }
 
-  private playChordById(chordId: string): void {
+  private playChordById(chordId: string, direction: "down" | "up" | "down_up" = "down"): void {
     const chord = this.db.getChordById(chordId);
     if (!chord) return;
 
@@ -872,19 +1308,69 @@ export class UIManager {
         });
         break;
       }
+      case "guitalele": {
+        const frets = chord.instruments.guitalele?.frets || [0, 0, 2, 2, 2, 0];
+        const openStrings = [45, 50, 55, 60, 64, 69];
+        frets.forEach((f, idx) => {
+          if (f >= 0) notes.push(openStrings[idx] + f + this.state.capo);
+        });
+        break;
+      }
+      case "violin": {
+        if (chord.instruments.violin?.doubleStops && chord.instruments.violin.doubleStops.length > 0) {
+          const ds = chord.instruments.violin.doubleStops[0];
+          const openStrings = [55, 62, 69, 76];
+          notes = [openStrings[0] + (ds[0] >= 0 ? ds[0] : 0), openStrings[1] + (ds[1] >= 0 ? ds[1] : 0)];
+        } else {
+          notes = chord.instruments.violin?.notes || [60, 64, 67];
+        }
+        break;
+      }
+      case "bass": {
+        if (chord.instruments.bass?.notes && chord.instruments.bass.notes.length > 0) {
+          notes = chord.instruments.bass.notes;
+        } else {
+          const frets = chord.instruments.bass?.frets || [0, -1, -1, -1];
+          const openStrings = [28, 33, 38, 43];
+          frets.forEach((f, idx) => {
+            if (f >= 0) notes.push(openStrings[idx] + f);
+          });
+          if (notes.length === 0) notes = [28, 35];
+        }
+        break;
+      }
       case "harmonica":
         notes = [60, 64, 67];
         break;
     }
 
-    audio.playChord(notes, this.state.activeInstrument, undefined, true);
+    if (this.state.activeInstrument === "harmonica") {
+      notes.forEach((n, idx) => {
+        audio.playNote(n, "harmonica", audio.getCurrentTime() + idx * 0.12, 0.8);
+      });
+    } else {
+      audio.playChord(notes, this.state.activeInstrument, undefined, true, direction);
+    }
 
-    // Visual press animation on play button
     const btn = document.getElementById("btn-play-active-chord");
     if (btn) {
       btn.classList.add("btn-pressed");
       setTimeout(() => btn.classList.remove("btn-pressed"), 200);
     }
+  }
+
+  public showToast(message: string, durationMs: number = 2500): void {
+    if (!this.toastEl) return;
+    this.toastEl.textContent = message;
+    this.toastEl.style.display = "block";
+    this.toastEl.classList.add("toast-show");
+
+    setTimeout(() => {
+      this.toastEl.classList.remove("toast-show");
+      setTimeout(() => {
+        this.toastEl.style.display = "none";
+      }, 300);
+    }, durationMs);
   }
 
   private createRippleEffect(x: number, y: number): void {

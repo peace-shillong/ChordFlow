@@ -3,7 +3,8 @@
     "id": "piano",
     "name": "Piano",
     "fretRange": [0, 0],
-    "capoRange": [0, 0]
+    "capoRange": [0, 0],
+    "defaultView": "chord"
   },
   {
     "id": "guitar",
@@ -11,6 +12,7 @@
     "strings": [40, 45, 50, 55, 59, 64],
     "fretRange": [0, 15],
     "capoRange": [0, 6],
+    "defaultView": "chord",
     "tunings": [
       {
         "id": "standard",
@@ -50,6 +52,7 @@
     "strings": [67, 60, 64, 69],
     "fretRange": [0, 12],
     "capoRange": [0, 6],
+    "defaultView": "chord",
     "tunings": [
       {
         "id": "standard_gcea",
@@ -69,9 +72,70 @@
     ]
   },
   {
+    "id": "guitalele",
+    "name": "Guitalele",
+    "strings": [45, 50, 55, 60, 64, 69],
+    "fretRange": [0, 12],
+    "capoRange": [0, 6],
+    "defaultView": "chord",
+    "tunings": [
+      {
+        "id": "standard_adgcea",
+        "name": "Standard (ADGCEA)",
+        "strings": [45, 50, 55, 60, 64, 69]
+      }
+    ]
+  },
+  {
+    "id": "violin",
+    "name": "Violin",
+    "strings": [55, 62, 69, 76],
+    "fretRange": [0, 7],
+    "capoRange": [0, 0],
+    "defaultView": "notes",
+    "tunings": [
+      {
+        "id": "standard_gdae",
+        "name": "Standard (G-D-A-E)",
+        "strings": [55, 62, 69, 76]
+      },
+      {
+        "id": "d_tuning_gdad",
+        "name": "D-Tuning (G-D-A-D)",
+        "strings": [55, 62, 69, 74]
+      }
+    ]
+  },
+  {
+    "id": "bass",
+    "name": "Bass",
+    "strings": [28, 33, 38, 43],
+    "fretRange": [0, 12],
+    "capoRange": [0, 0],
+    "defaultView": "notes",
+    "tunings": [
+      {
+        "id": "standard_eadg",
+        "name": "Standard (E-A-D-G)",
+        "strings": [28, 33, 38, 43]
+      },
+      {
+        "id": "drop_d_dadg",
+        "name": "Drop D (D-A-D-G)",
+        "strings": [26, 33, 38, 43]
+      },
+      {
+        "id": "f_tuning_fadf",
+        "name": "F-Tuning (F-A-D-F)",
+        "strings": [29, 33, 38, 41]
+      }
+    ]
+  },
+  {
     "id": "harmonica",
     "name": "Harmonica",
     "fretRange": [0, 0],
-    "capoRange": [0, 0]
+    "capoRange": [0, 0],
+    "defaultView": "notes"
   }
 ]

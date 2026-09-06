@@ -45,7 +45,8 @@ export class ExportEngine {
                         throw new Error("Invalid ChordFlow JSON format: missing 'progression' array.");
                     }
                     resolve({
-                        progression: parsed.progression.slice(0, 7),
+                        title: typeof parsed.title === "string" ? parsed.title : undefined,
+                        progression: parsed.progression.slice(0, 16),
                         tempo: typeof parsed.tempo === "number" ? parsed.tempo : undefined,
                         activeInstrument: parsed.activeInstrument,
                         capo: typeof parsed.capo === "number" ? parsed.capo : undefined,

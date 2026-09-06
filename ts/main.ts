@@ -17,15 +17,21 @@ async function bootstrap(): Promise<void> {
     const initialState: AppState = {
       mode: "clean", // Spec: Clean Mode is default for beginners
       activeInstrument: "guitar",
+      displayView: "chord",
       selectedChord: savedProgression[0] || "Cmaj",
       selectedInversionIndex: 0,
+      selectedVoicingId: "open",
       progression: savedProgression,
+      progressionTitle: progression.getTitle(),
       activeChordIndex: 0,
       capo: 0,
       tuning: "standard",
       strumPattern: "basic",
       tempo: progression.getTempo(),
+      volume: 0.8,
       isPlaying: false,
+      soundPreset: "acoustic_steel",
+      audioSettings: {},
       toggles: {
         showNotes: true,
         showIntervals: false,

@@ -12,11 +12,31 @@ export type ChordQuality =
   | "add9"
   | "m7b5";
 
-export type InstrumentId = "piano" | "guitar" | "ukulele" | "harmonica";
+export type InstrumentId =
+  | "piano"
+  | "guitar"
+  | "ukulele"
+  | "harmonica"
+  | "violin"
+  | "bass"
+  | "guitalele";
+
+export type DisplayView = "chord" | "notes";
 
 export interface Inversion {
   notes: string[];
   label: string;
+}
+
+export interface VoicingOption {
+  id: string;
+  label: string;
+  guitar?: number[]; // frets
+  piano?: number[]; // MIDI notes
+  ukulele?: number[]; // frets
+  guitalele?: number[]; // frets
+  violin?: number[]; // finger positions / double-stops
+  bass?: number[]; // frets
 }
 
 export interface PianoVoicing {
@@ -39,6 +59,30 @@ export interface UkuleleVoicing {
   diagram?: string;
 }
 
+export interface GuitaleleVoicing {
+  frets: number[]; // [0, 0, 2, 2, 2, 0] etc (ADGCEA)
+  strings?: number[];
+  fingers?: number[];
+  diagram?: string;
+}
+
+export interface ViolinVoicing {
+  frets?: number[]; // 4 strings [G, D, A, E] finger positions
+  doubleStops?: number[][]; // e.g. [[0, 2], [2, 0]]
+  notes?: number[]; // MIDI notes
+  strings?: number[];
+  fingers?: number[];
+  diagram?: string;
+}
+
+export interface BassVoicing {
+  frets: number[]; // 4 strings [E, A, D, G]
+  notes?: number[]; // MIDI notes
+  strings?: number[];
+  fingers?: number[];
+  diagram?: string;
+}
+
 export interface HarmonicaVoicing {
   holes: string[]; // e.g. ["4", "5", "6"] or ["4-", "4=", "4+", "5-"]
   blowDraw?: ("blow" | "draw")[];
@@ -51,6 +95,9 @@ export interface ChordInstruments {
   guitar: GuitarVoicing;
   ukulele: UkuleleVoicing;
   harmonica: HarmonicaVoicing;
+  violin?: ViolinVoicing;
+  bass?: BassVoicing;
+  guitalele?: GuitaleleVoicing;
 }
 
 export interface Chord {
@@ -64,13 +111,14 @@ export interface Chord {
   scale: string; // "C Major"
   inversions: Inversion[];
   instruments: ChordInstruments;
+  voicings?: VoicingOption[];
 }
 
 export interface Progression {
   id: string;
   name: string;
   key: string;
-  chords: string[]; // chord IDs, length 4–7
+  chords: string[]; // chord IDs, length 4–16
   beatsPerChord: number;
   tempo: number; // BPM
   style?: string;
@@ -90,6 +138,7 @@ export interface Instrument {
   tunings?: TuningConfig[];
   fretRange: [number, number];
   capoRange: [number, number];
+  defaultView?: DisplayView;
 }
 
 export interface StrumPattern {
@@ -98,6 +147,15 @@ export interface StrumPattern {
   pattern: string[]; // ["D", "", "U", "", "D", "U", "D", "U"]
   accent?: number[]; // beat indices with accent (0-indexed)
   bpm?: number;
+}
+
+export interface AudioSettings {
+  lpf: number; // Low-pass filter frequency in Hz (200 - 20000)
+  hpf: number; // High-pass filter frequency in Hz (20 - 2000)
+  decay: number; // Decay/Release duration in seconds (0.05 - 3.0)
+  detune: number; // Detune in cents (-25 to +25)
+  reverb: number; // Reverb wet mix (0.0 - 1.0)
+  volume: number; // Instrument specific gain (0.0 - 1.0)
 }
 
 export interface AppToggles {
@@ -112,15 +170,21 @@ export interface AppToggles {
 export interface AppState {
   mode: "clean" | "advanced";
   activeInstrument: InstrumentId;
+  displayView: DisplayView;
   selectedChord: string | null;
   selectedInversionIndex: number;
+  selectedVoicingId: string;
   progression: string[];
+  progressionTitle: string;
   activeChordIndex: number;
   capo: number;
   tuning: string;
   strumPattern: string | null;
   tempo: number;
+  volume: number;
   isPlaying: boolean;
+  soundPreset: string;
+  audioSettings: Record<string, AudioSettings>;
   toggles: AppToggles;
   theme: "light" | "dark" | "system";
 }
@@ -161,3 +225,4 @@ declare global {
     };
   }
 }
+

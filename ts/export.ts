@@ -39,6 +39,7 @@ export class ExportEngine {
    * Import JSON file and validate structure
    */
   public async importJSON(file: File): Promise<{
+    title?: string;
     progression: string[];
     tempo?: number;
     activeInstrument?: InstrumentId;
@@ -57,7 +58,8 @@ export class ExportEngine {
           }
 
           resolve({
-            progression: parsed.progression.slice(0, 7),
+            title: typeof parsed.title === "string" ? parsed.title : undefined,
+            progression: parsed.progression.slice(0, 16),
             tempo: typeof parsed.tempo === "number" ? parsed.tempo : undefined,
             activeInstrument: parsed.activeInstrument,
             capo: typeof parsed.capo === "number" ? parsed.capo : undefined,

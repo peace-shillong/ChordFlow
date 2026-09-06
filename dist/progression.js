@@ -2,12 +2,14 @@ import { audio } from "./audio.js";
 export class ProgressionManager {
     constructor() {
         this.chords = ["Cmaj", "Gmaj", "Amin", "Fmaj"];
+        this.title = "My Progression";
         this.activeIndex = 0;
         this.tempo = 120;
         this.beatsPerChord = 4;
         this.isPlaying = false;
         this.isLooping = true;
         this.isMetronomeEnabled = true;
+        this.maxChords = 8; // 8 for clean mode, 16 for advanced mode
         this.timerId = null;
         this.nextBeatTime = 0;
         this.currentBeatInChord = 0;
@@ -34,6 +36,19 @@ export class ProgressionManager {
     }
     getChords() {
         return [...this.chords];
+    }
+    getTitle() {
+        return this.title;
+    }
+    setTitle(title) {
+        this.title = title || "My Progression";
+        this.saveToStorage();
+    }
+    getMaxChords() {
+        return this.maxChords;
+    }
+    setMaxChords(limit) {
+        this.maxChords = Math.max(4, Math.min(16, limit));
     }
     getActiveIndex() {
         return this.activeIndex;
@@ -70,8 +85,8 @@ export class ProgressionManager {
         return this.isMetronomeEnabled;
     }
     addChord(chordId) {
-        if (this.chords.length >= 7) {
-            return false; // Spec: 4-7 chords
+        if (this.chords.length >= this.maxChords) {
+            return false;
         }
         this.chords.push(chordId);
         this.activeIndex = this.chords.length - 1;
@@ -116,12 +131,14 @@ export class ProgressionManager {
         this.saveToStorage();
         this.notifyListChange();
     }
-    setProgression(chords, tempo, beatsPerChord) {
-        this.chords = chords.slice(0, 7);
+    setProgression(chords, tempo, beatsPerChord, title) {
+        this.chords = chords.slice(0, this.maxChords);
         if (tempo)
             this.tempo = tempo;
         if (beatsPerChord)
             this.beatsPerChord = beatsPerChord;
+        if (title)
+            this.title = title;
         this.activeIndex = 0;
         this.currentBeatInChord = 0;
         this.saveToStorage();
@@ -181,24 +198,27 @@ export class ProgressionManager {
             if (this.isMetronomeEnabled) {
                 audio.playClick(isFirstBeatOfChord, this.nextBeatTime);
             }
-            // Strum pattern rhythm or chord strike on beat 1
-            if (isFirstBeatOfChord) {
-                const chordId = this.chords[this.activeIndex];
-                const chordObj = this.db?.getChordById(chordId);
-                if (chordObj) {
+            // Play chord/notes on beat 1 or strum subdivisions
+            const chordId = this.chords[this.activeIndex];
+            const chordObj = this.db?.getChordById(chordId);
+            if (chordObj) {
+                if (isFirstBeatOfChord) {
                     const midiNotes = this.getChordMidiForInstrument(chordObj, this.activeInstrument);
-                    audio.playChord(midiNotes, this.activeInstrument, this.nextBeatTime, true);
+                    if (this.activeInstrument === "harmonica") {
+                        // Harmonica plays notes sequentially (arpeggiated melodic line)
+                        midiNotes.forEach((note, idx) => {
+                            audio.playNote(note, "harmonica", this.nextBeatTime + idx * 0.12, 0.8);
+                        });
+                    }
+                    else {
+                        audio.playChord(midiNotes, this.activeInstrument, this.nextBeatTime, true);
+                    }
                 }
-            }
-            else if (this.activeStrumPattern && this.activeStrumPattern.pattern) {
-                // If strum pattern has a stroke on this beat subdivision
-                const pattern = this.activeStrumPattern.pattern;
-                const patternIndex = (this.currentBeatInChord * 2) % pattern.length;
-                const stroke = pattern[patternIndex];
-                if (stroke === "D" || stroke === "U") {
-                    const chordId = this.chords[this.activeIndex];
-                    const chordObj = this.db?.getChordById(chordId);
-                    if (chordObj) {
+                else if (this.activeStrumPattern && this.activeStrumPattern.pattern) {
+                    const pattern = this.activeStrumPattern.pattern;
+                    const patternIndex = (this.currentBeatInChord * 2) % pattern.length;
+                    const stroke = pattern[patternIndex];
+                    if (stroke === "D" || stroke === "U") {
                         const midiNotes = this.getChordMidiForInstrument(chordObj, this.activeInstrument);
                         audio.playChord(midiNotes, this.activeInstrument, this.nextBeatTime, false);
                     }
@@ -245,9 +265,8 @@ export class ProgressionManager {
                 const openStrings = [40, 45, 50, 55, 59, 64];
                 const notes = [];
                 frets.forEach((f, idx) => {
-                    if (f >= 0) {
+                    if (f >= 0)
                         notes.push(openStrings[idx] + f);
-                    }
                 });
                 return notes;
             }
@@ -256,11 +275,41 @@ export class ProgressionManager {
                 const openStrings = [67, 60, 64, 69];
                 const notes = [];
                 frets.forEach((f, idx) => {
-                    if (f >= 0) {
+                    if (f >= 0)
                         notes.push(openStrings[idx] + f);
-                    }
                 });
                 return notes;
+            }
+            case "guitalele": {
+                const frets = chord.instruments.guitalele?.frets || [0, 0, 2, 2, 2, 0];
+                const openStrings = [45, 50, 55, 60, 64, 69];
+                const notes = [];
+                frets.forEach((f, idx) => {
+                    if (f >= 0)
+                        notes.push(openStrings[idx] + f);
+                });
+                return notes;
+            }
+            case "violin": {
+                if (chord.instruments.violin?.doubleStops && chord.instruments.violin.doubleStops.length > 0) {
+                    const ds = chord.instruments.violin.doubleStops[0];
+                    const openStrings = [55, 62, 69, 76];
+                    return [openStrings[0] + (ds[0] >= 0 ? ds[0] : 0), openStrings[1] + (ds[1] >= 0 ? ds[1] : 0)];
+                }
+                return chord.instruments.violin?.notes || [60, 64, 67];
+            }
+            case "bass": {
+                if (chord.instruments.bass?.notes && chord.instruments.bass.notes.length > 0) {
+                    return chord.instruments.bass.notes;
+                }
+                const frets = chord.instruments.bass?.frets || [0, -1, -1, -1];
+                const openStrings = [28, 33, 38, 43];
+                const notes = [];
+                frets.forEach((f, idx) => {
+                    if (f >= 0)
+                        notes.push(openStrings[idx] + f);
+                });
+                return notes.length > 0 ? notes : [28, 35];
             }
             case "harmonica":
                 return [60, 64, 67];
@@ -291,6 +340,7 @@ export class ProgressionManager {
         try {
             localStorage.setItem("chordflow_progression", JSON.stringify({
                 chords: this.chords,
+                title: this.title,
                 tempo: this.tempo,
                 beatsPerChord: this.beatsPerChord
             }));
@@ -305,8 +355,10 @@ export class ProgressionManager {
             if (saved) {
                 const data = JSON.parse(saved);
                 if (Array.isArray(data.chords) && data.chords.length >= 1) {
-                    this.chords = data.chords.slice(0, 7);
+                    this.chords = data.chords.slice(0, 16);
                 }
+                if (typeof data.title === "string")
+                    this.title = data.title;
                 if (typeof data.tempo === "number")
                     this.tempo = data.tempo;
                 if (typeof data.beatsPerChord === "number")
