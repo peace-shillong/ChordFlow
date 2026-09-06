@@ -10,8 +10,10 @@ async function bootstrap() {
         const savedProgression = progression.getChords();
         const savedTheme = localStorage.getItem("chordflow-theme") ||
             (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+        const savedMode = localStorage.getItem("chordflow-mode") || "clean";
+        progression.setMaxChords(savedMode === "clean" ? 8 : 16);
         const initialState = {
-            mode: "clean", // Spec: Clean Mode is default for beginners
+            mode: savedMode,
             activeInstrument: "guitar",
             displayView: "chord",
             selectedChord: savedProgression[0] || "Cmaj",

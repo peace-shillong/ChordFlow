@@ -413,6 +413,7 @@ export class DiagramRenderer {
         ctx.beginPath();
         ctx.roundRect(padX - 2, padY, keyboardW + 4, whiteKeyH + 4, 6);
         ctx.fill();
+        // Calculate visible Octaves & C Keys
         const whiteKeys = [];
         const blackKeys = [];
         let currentMidi = startMidi;
@@ -431,6 +432,29 @@ export class DiagramRenderer {
             }
             currentMidi++;
         }
+        const cKeys = whiteKeys.filter(k => k.midi % 12 === 0);
+        const cOctaves = cKeys.map(k => Math.floor(k.midi / 12) - 1);
+        const allOctaves = Array.from(new Set(whiteKeys.map(k => Math.floor(k.midi / 12) - 1))).sort((a, b) => a - b);
+        const primaryOctave = cOctaves[0] !== undefined ? cOctaves[0] : allOctaves[0] || 4;
+        // Top Visible Octave Title Banner
+        const octaveText = cOctaves.length > 0
+            ? `Octave ${cOctaves.join(" & ")} (C${cOctaves.join(", C")})`
+            : `Octave ${primaryOctave}`;
+        const bannerW = Math.min(240, keyboardW - 10);
+        const bannerH = 20;
+        const bannerX = (w - bannerW) / 2;
+        const bannerY = Math.max(4, padY - 24);
+        ctx.fillStyle = isDark ? "rgba(99, 102, 241, 0.18)" : "rgba(79, 70, 229, 0.1)";
+        ctx.strokeStyle = isDark ? "rgba(99, 102, 241, 0.45)" : "rgba(79, 70, 229, 0.3)";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.roundRect(bannerX, bannerY, bannerW, bannerH, 10);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = isDark ? "#818cf8" : "#4f46e5";
+        ctx.font = "bold 11px system-ui, sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(`🎹 Visible: ${octaveText}`, w / 2, bannerY + 14);
         // Draw White Keys
         for (const k of whiteKeys) {
             const isKeyActive = isNotesMode ? chordPitchClasses.has(k.midi % 12) : activeMidiSet.has(k.midi);
@@ -442,11 +466,20 @@ export class DiagramRenderer {
             ctx.roundRect(k.x, k.y, k.w - 1, k.h, [0, 0, 4, 4]);
             ctx.fill();
             ctx.stroke();
+            // Show C Octave Label (e.g. C4, C3, C5) on C keys
+            if (k.midi % 12 === 0) {
+                const octNum = Math.floor(k.midi / 12) - 1;
+                ctx.fillStyle = isKeyActive && info ? "rgba(255,255,255,0.9)" : isDark ? "#818cf8" : "#4f46e5";
+                ctx.font = "bold 9px system-ui, sans-serif";
+                ctx.textAlign = "center";
+                const cLabelY = isKeyActive && info && info.label ? k.y + k.h - 22 : k.y + k.h - 6;
+                ctx.fillText(`C${octNum}`, k.x + (k.w - 1) / 2, cLabelY);
+            }
             if (isKeyActive && info && info.label) {
                 ctx.fillStyle = info.text;
                 ctx.font = "bold 10px system-ui, sans-serif";
                 ctx.textAlign = "center";
-                ctx.fillText(info.label, k.x + (k.w - 1) / 2, k.y + k.h - 12);
+                ctx.fillText(info.label, k.x + (k.w - 1) / 2, k.y + k.h - 10);
             }
             this.clickTargets.push({ x: k.x + k.w / 2, y: k.y + k.h * 0.75, radius: k.w / 2, midi: k.midi, instrument: "piano" });
         }
@@ -469,13 +502,16 @@ export class DiagramRenderer {
             }
             this.clickTargets.push({ x: k.x + k.w / 2, y: k.y + k.h * 0.5, radius: k.w / 2, midi: k.midi, instrument: "piano" });
         }
-        // Paging Arrows
-        ctx.fillStyle = isDark ? "rgba(255,255,255,0.4)" : "rgba(0,0,0,0.3)";
-        ctx.font = "bold 14px system-ui, sans-serif";
+        // Paging Arrows & Click Targets
+        ctx.fillStyle = isDark ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.5)";
+        ctx.font = "bold 16px system-ui, sans-serif";
         ctx.textAlign = "left";
-        ctx.fillText("◀", 4, padY + whiteKeyH / 2);
+        ctx.fillText("◀", 4, padY + whiteKeyH / 2 + 5);
         ctx.textAlign = "right";
-        ctx.fillText("▶", w - 4, padY + whiteKeyH / 2);
+        ctx.fillText("▶", w - 4, padY + whiteKeyH / 2 + 5);
+        // Click targets for previous/next octave scrolling
+        this.clickTargets.push({ x: 10, y: padY + whiteKeyH / 2, radius: 16, midi: -100, instrument: "piano" });
+        this.clickTargets.push({ x: w - 10, y: padY + whiteKeyH / 2, radius: 16, midi: 100, instrument: "piano" });
     }
     // --- Violin Diagram ---
     renderViolin(ctx, w, h, chord, tuningStrings = [55, 62, 69, 76], voicing, viewMode = "notes", toggles, isDark = true) {

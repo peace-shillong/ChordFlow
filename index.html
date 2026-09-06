@@ -11,7 +11,7 @@
 
   <!-- Prevent theme FOUC (Flash of Unstyled Content) -->
   <script>
-    (function() {
+    (function () {
       const t = localStorage.getItem('chordflow-theme') ||
         (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
       document.documentElement.setAttribute('data-theme', t);
@@ -51,13 +51,16 @@
         </div>
 
         <!-- Action Modals Triggers -->
-        <button id="btn-open-settings" class="icon-btn header-action-btn" title="Instrument & Audio Settings (⚙️)" aria-label="Open Settings">
+        <button id="btn-open-settings" class="icon-btn header-action-btn" title="Instrument & Audio Settings (⚙️)"
+          aria-label="Open Settings">
           ⚙️
         </button>
-        <button id="btn-open-theory" class="icon-btn header-action-btn" title="Music Theory & Circle of Fifths (🎼)" aria-label="Open Music Theory">
+        <button id="btn-open-theory" class="icon-btn header-action-btn" title="Music Theory & Circle of Fifths (🎼)"
+          aria-label="Open Music Theory">
           🎼
         </button>
-        <button id="btn-open-tuner" class="icon-btn header-action-btn" title="Instrument Tuner (🎯)" aria-label="Open Tuner">
+        <button id="btn-open-tuner" class="icon-btn header-action-btn" title="Instrument Tuner (🎯)"
+          aria-label="Open Tuner">
           🎯
         </button>
 
@@ -152,9 +155,16 @@
                 <span id="generator-target-chord" class="generator-target-badge">C Major (C)</span>
               </div>
               <div class="generator-controls">
-                <label for="generator-style-select" class="control-label" style="font-size: 11px;">Style / Formula:</label>
-                <select id="generator-style-select" class="custom-select"
-                  style="width: 100%; font-size: 12px; padding: 7px 10px;"></select>
+                <div class="generator-style-picker-wrapper">
+                  <span class="control-label" style="font-size: 11px;">Style / Formula:</span>
+                  <button type="button" id="btn-open-generator-styles" class="generator-style-trigger-btn" aria-haspopup="dialog" aria-expanded="false" title="Click to browse and select progression style / formula">
+                    <div class="generator-style-trigger-content">
+                      <span id="generator-selected-style-name" class="generator-style-trigger-title">Royal Road / 王道進行 (IV-V-iii-vi)</span>
+                      <span id="generator-selected-style-desc" class="generator-style-trigger-subtitle">Japanese &amp; City Pop • Pop Rock</span>
+                    </div>
+                    <span class="generator-style-trigger-badge">Browse ▾</span>
+                  </button>
+                </div>
                 <button id="btn-generate-progression" class="generator-action-btn"
                   title="Generate Chord Progression starting on selected chord">
                   <span>⚡</span>
@@ -172,20 +182,24 @@
             <div class="panel-header progression-header-row">
               <div class="progression-title-wrapper">
                 <span class="prog-icon">🎼</span>
-                <input type="text" id="progression-title-input" class="progression-title-input" value="My Progression" placeholder="My Progression" aria-label="Progression Title">
+                <input type="text" id="progression-title-input" class="progression-title-input" value="My Progression"
+                  placeholder="My Progression" aria-label="Progression Title">
                 <span id="progression-counter-badge" class="progression-counter-badge">4 / 8</span>
               </div>
 
               <!-- Compact Toolbar Inside Progression Card -->
               <div class="progression-toolbar">
-                <select id="preset-progression-select" class="custom-select compact-select" aria-label="Load Sample Progression"></select>
-                <button id="btn-copy-progression" class="toolbar-btn" title="Copy Progression as Text (📋)" aria-label="Copy Progression">
+                <select id="preset-progression-select" class="custom-select compact-select"
+                  aria-label="Load Sample Progression"></select>
+                <button id="btn-copy-progression" class="toolbar-btn" title="Copy Progression as Text (📋)"
+                  aria-label="Copy Progression">
                   📋 Copy
                 </button>
 
                 <!-- Save Dropdown -->
                 <div class="dropdown-wrapper">
-                  <button id="btn-save-dropdown-toggle" class="toolbar-btn" title="Save / Export Progression" aria-haspopup="true">
+                  <button id="btn-save-dropdown-toggle" class="toolbar-btn" title="Save / Export Progression"
+                    aria-haspopup="true">
                     💾 Save ▾
                   </button>
                   <div id="save-dropdown-menu" class="dropdown-menu" style="display: none;">
@@ -196,7 +210,8 @@
                 </div>
 
                 <!-- Import Button -->
-                <button id="btn-import-progression" class="toolbar-btn" title="Import Progression JSON (📂)" aria-label="Import JSON">
+                <button id="btn-import-progression" class="toolbar-btn" title="Import Progression JSON (📂)"
+                  aria-label="Import JSON">
                   📂 Import
                 </button>
                 <input type="file" id="json-file-input" accept=".json" style="display: none;">
@@ -233,10 +248,12 @@
                 <button id="btn-stop-progression" class="transport-btn" title="Stop (⏹)" aria-label="Stop Progression">
                   ⏹
                 </button>
-                <button id="btn-toggle-loop" class="transport-btn active" title="Toggle Loop (🔁)" aria-label="Toggle Loop">
+                <button id="btn-toggle-loop" class="transport-btn active" title="Toggle Loop (🔁)"
+                  aria-label="Toggle Loop">
                   🔁
                 </button>
-                <button id="btn-toggle-metronome" class="transport-btn active" title="Toggle Metronome (⏱)" aria-label="Toggle Metronome">
+                <button id="btn-toggle-metronome" class="transport-btn active" title="Toggle Metronome (⏱)"
+                  aria-label="Toggle Metronome">
                   ⏱
                 </button>
                 <div id="metronome-pulse-indicator" class="metro-indicator" title="Beat Metronome Pulse"></div>
@@ -248,38 +265,46 @@
                 <input type="range" id="tempo-slider" class="tempo-slider" min="40" max="240" value="120"
                   aria-label="Tempo Slider">
                 <span id="tempo-value-display" class="tempo-value">120 BPM</span>
-                <button id="btn-tap-tempo" class="transport-btn tap-btn" title="Tap repeatedly to set tempo (🎵)">🎵 Tap</button>
+                <button id="btn-tap-tempo" class="transport-btn tap-btn" title="Tap repeatedly to set tempo (🎵)">🎵
+                  Tap</button>
               </div>
 
               <!-- Volume Control Slider -->
               <div class="volume-control-group">
                 <span class="volume-icon" id="volume-icon-btn" title="Toggle Mute">🔊</span>
-                <input type="range" id="volume-slider" class="volume-slider" min="0" max="100" value="80" aria-label="Master Volume Slider">
+                <input type="range" id="volume-slider" class="volume-slider" min="0" max="100" value="80"
+                  aria-label="Master Volume Slider">
                 <span id="volume-value-display" class="volume-value">80%</span>
               </div>
             </div>
 
             <!-- Strum Visualizer Ticker (Beginner Clean Mode & Playback Sync) -->
-            <div id="strum-visualizer-ticker" class="strum-visualizer-container" aria-label="Strumming Rhythm Visualizer"></div>
+            <div id="strum-visualizer-ticker" class="strum-visualizer-container"
+              aria-label="Strumming Rhythm Visualizer"></div>
 
             <!-- Strum Pattern Editor (Advanced Mode) -->
-            <div id="strum-pattern-editor-container" class="strum-editor-container" style="display: none;" aria-label="Interactive Strum Pattern Editor">
+            <div id="strum-pattern-editor-container" class="strum-editor-container" style="display: none;"
+              aria-label="Interactive Strum Pattern Editor">
               <div class="editor-header">
                 <div class="editor-header-left">
                   <span class="editor-title">🎸 Strum Pattern Editor (16 Subdivisions):</span>
-                  <span class="editor-hint">Click slots to cycle: <b>D</b> (↓) → <b>U</b> (↑) → <b>D+U</b> (↓↑) → <b>Rest</b> (·)</span>
+                  <span class="editor-hint">Click slots to cycle: <b>D</b> (↓) → <b>U</b> (↑) → <b>D+U</b> (↓↑) →
+                    <b>Rest</b> (·)</span>
                 </div>
                 <div class="editor-preset-wrapper">
                   <label for="editor-strum-select" class="editor-preset-label">Pattern Preset:</label>
-                  <select id="editor-strum-select" class="custom-select editor-preset-select" aria-label="Select Strum Pattern Preset"></select>
+                  <select id="editor-strum-select" class="custom-select editor-preset-select"
+                    aria-label="Select Strum Pattern Preset"></select>
                 </div>
               </div>
               <div id="strum-editor-grid" class="strum-editor-grid"></div>
               <div class="editor-actions-row">
-                <button id="btn-apply-strum" class="btn-apply-strum" type="button" title="Apply this strum pattern to playback and visualizer">
+                <button id="btn-apply-strum" class="btn-apply-strum" type="button"
+                  title="Apply this strum pattern to playback and visualizer">
                   ✓ Apply
                 </button>
-                <button id="btn-reset-strum" class="btn-reset-strum" type="button" title="Discard unsaved edits in grid">
+                <button id="btn-reset-strum" class="btn-reset-strum" type="button"
+                  title="Discard unsaved edits in grid">
                   ↺ Reset
                 </button>
               </div>
@@ -300,7 +325,8 @@
             <div class="diagram-controls-bar">
               <div class="control-row-item">
                 <label for="chord-voicing-select" class="control-label" style="font-size: 11px;">Voicing:</label>
-                <select id="chord-voicing-select" class="custom-select" style="font-size: 12px; padding: 5px 8px;"></select>
+                <select id="chord-voicing-select" class="custom-select"
+                  style="font-size: 12px; padding: 5px 8px;"></select>
               </div>
 
               <div class="view-mode-toggle" role="group" aria-label="Display View Mode">
@@ -333,7 +359,8 @@
     <footer class="app-footer">
       <div class="footer-content">
         <div class="footer-hints">
-          <span>Shortcuts: <kbd>1–8</kbd> Play Chord • <kbd>Shift + 1–8</kbd> Up Strum • <kbd>Space</kbd> Play/Pause • <kbd>Enter</kbd> Play Active • <kbd>←/→</kbd> Step</span>
+          <span>Shortcuts: <kbd>1–8</kbd> Play Chord • <kbd>Shift + 1–8</kbd> Up Strum • <kbd>Space</kbd> Play/Pause •
+            <kbd>Enter</kbd> Play Active • <kbd>←/→</kbd> Step</span>
         </div>
       </div>
     </footer>
@@ -344,7 +371,8 @@
        ========================================================================== -->
 
   <!-- 1. Instrument & Audio Settings Modal -->
-  <div id="settings-modal" class="modal-backdrop" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="settings-modal-title">
+  <div id="settings-modal" class="modal-backdrop" style="display: none;" role="dialog" aria-modal="true"
+    aria-labelledby="settings-modal-title">
     <div class="glass-panel modal-card">
       <div class="modal-header">
         <h3 id="settings-modal-title" class="modal-title">⚙️ Instrument & Audio Settings</h3>
@@ -361,10 +389,10 @@
         </div>
 
         <!-- Tuning Dropdown -->
-        <div class="control-group-modal">
+        <!-- <div class="control-group-modal">
           <label for="tuning-select" class="modal-label">Instrument Tuning:</label>
           <select id="tuning-select" class="custom-select full-width"></select>
-        </div>
+        </div> -->
 
         <!-- Strum Pattern Dropdown -->
         <div class="control-group-modal">
@@ -407,10 +435,12 @@
             <span id="val-reverb">20%</span>
           </div>
           <div class="audio-reset-actions">
-            <button id="btn-reset-audio-instrument" class="btn-reset-audio" type="button" title="Reset this instrument's sound parameters to default">
+            <button id="btn-reset-audio-instrument" class="btn-reset-audio" type="button"
+              title="Reset this instrument's sound parameters to default">
               ↺ Reset to Default
             </button>
-            <button id="btn-reset-all-audio" class="link-reset-all" type="button" title="Reset all instruments' audio settings to default">
+            <button id="btn-reset-all-audio" class="link-reset-all" type="button"
+              title="Reset all instruments' audio settings to default">
               Reset All
             </button>
           </div>
@@ -420,7 +450,8 @@
   </div>
 
   <!-- 2. Music Theory & Circle of Fifths Modal -->
-  <div id="theory-modal" class="modal-backdrop" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="theory-modal-title">
+  <div id="theory-modal" class="modal-backdrop" style="display: none;" role="dialog" aria-modal="true"
+    aria-labelledby="theory-modal-title">
     <div class="glass-panel modal-card modal-card-large">
       <div class="modal-header">
         <h3 id="theory-modal-title" class="modal-title">🎼 Music Theory & Circle of Fifths</h3>
@@ -462,7 +493,8 @@
   </div>
 
   <!-- 3. Real-Time Pitch Tuner Modal -->
-  <div id="tuner-modal" class="modal-backdrop" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="tuner-modal-title">
+  <div id="tuner-modal" class="modal-backdrop" style="display: none;" role="dialog" aria-modal="true"
+    aria-labelledby="tuner-modal-title">
     <div class="glass-panel modal-card tuner-card">
       <div class="modal-header">
         <h3 id="tuner-modal-title" class="modal-title">🎯 Instrument Tuner</h3>
@@ -484,7 +516,8 @@
         </div>
 
         <!-- Target Strings Selection Buttons Row -->
-        <div class="tuner-string-pills-row" id="tuner-string-pills" role="group" aria-label="Select String to Tune"></div>
+        <div class="tuner-string-pills-row" id="tuner-string-pills" role="group" aria-label="Select String to Tune">
+        </div>
 
         <!-- Gauge Dial Display -->
         <div class="tuner-gauge-container">
@@ -519,6 +552,33 @@
         <button class="modal-close-btn" id="btn-close-mobile-library" title="Close">✕</button>
       </div>
       <div class="modal-body" id="mobile-library-container"></div>
+    </div>
+  </div>
+
+  <!-- 5. Progression Styles & Formulas Modal -->
+  <div id="generator-styles-modal" class="modal-backdrop" style="display: none;" role="dialog" aria-modal="true"
+    aria-labelledby="generator-styles-modal-title">
+    <div class="glass-panel modal-card modal-card-large generator-styles-modal-card">
+      <div class="modal-header">
+        <div class="modal-header-left">
+          <h3 id="generator-styles-modal-title" class="modal-title">✨ Progression Styles & Formulas</h3>
+          <p class="modal-subtitle">Select a style formula starting on <span id="generator-modal-target-chord" class="generator-modal-root-highlight">C Major (C)</span></p>
+        </div>
+        <button class="modal-close-btn" id="btn-close-generator-styles" title="Close">✕</button>
+      </div>
+      <div class="modal-body generator-styles-modal-body">
+        <!-- Category Filter Pills & Search Bar -->
+        <div class="generator-modal-toolbar">
+          <div class="generator-modal-categories" id="generator-category-filter-pills" role="tablist" aria-label="Style Categories"></div>
+          <div class="generator-modal-search-wrapper">
+            <span class="generator-search-icon">🔍</span>
+            <input type="text" id="generator-style-search" class="search-input generator-search-input" placeholder="Search styles & formulas (e.g. Royal Road, ii-V-I, Blues)..." aria-label="Search Styles">
+          </div>
+        </div>
+
+        <!-- Styles Grid Container -->
+        <div id="generator-styles-grid" class="generator-styles-grid" role="list"></div>
+      </div>
     </div>
   </div>
 

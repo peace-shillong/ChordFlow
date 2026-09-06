@@ -341,3 +341,27 @@ Few things to do after changes mod is completed
 1. Theme Light/Dark should be save in localstorage of browser so next time user visits the theme will be take from there
 2. Audio Synthesis Parameters - have a button to reset the settings to the default for each instrument if a user has made his changes.
 3. In Advance mode the Strum Pattern Editor (16 Subdivisions) should show the current strum pattern selected from the settings modal Strum Pattern in the editor so that it can be edited and applied by pressing an apply button, so the strum-visualizer-ticker will display the updated pattern and the updated strumming pattern will also be played for the current chord progression, The Strum Pattern Editor should also allow user to change the existing strumming pattern by selecting the options from one of the drop down options, The Strum Pattern Editor, Visualer and the strumming play are related to each other. In Beginner mode, the Strumming Pattern Visualer should be visible to the user.
+
+3 minor fixes
+The app is great, let's do a few things: 
+1. The Auto-Generate Progression - Should also generate the strumming pattern as per the selected Style / Formula when user generates a new Progression. 
+2. Selected mode Beginner/Advance Mode should be stored in localStorage so that next time user opens the SPA the preferred mode will be loaded. 
+3. The Chord Diagram for the Piano, if the user has press the arrow key to scroll to the previous/next Octave the Octave should be shown for e.g 4 when C4 is visible, give proper title for the visible Octave in the Keyboard. Let's make these three changes without breaking any of the working features 
+
+More Minor Changes 
+1. On load if user has selected Advanced mode by default user will not be able to add chords when he reached 8/16 even though he is on Advance Mode enaabled.
+"Progression limit reached (maximum 16 chords). Switch to Advanced mode for up to 16 chords."
+2. Display the Style / Formula for Auto Chord Progression in a modal instead of a dropdown list 
+3. Instrument Tuning is not working for strings - may be removed  - Manual
+
+After these minor fixes I am almost done now
+- left with making this into a PWA
+- testing it on live server and 
+- generating a ReadMe, with images and About Modal
+
+What I saw in this version that is ready to deploy and I won't make any more changes:
+Future Enhancements or maybe not: 
+1. Auto Generate Chord Progression - when user generates the chord progression, the tempo is not generated as per the style but kept with the current tempo. 
+2. Capo on String instruments: I expected The Capo when turned on should change the chords in the chord progression and show the correct diagram for the correct chord that has been transposed to, but it didn't work, so let's leave this out for now. 
+
+

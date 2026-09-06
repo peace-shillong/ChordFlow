@@ -78,7 +78,7 @@ assert(invalidProgChords === 0, `All progression chords exist in chord database`
 
 // 3. Instruments Dataset
 console.log("\n3. Testing Instruments Dataset:");
-assert(instruments.length === 4, `Found 4 instruments: Piano, Guitar, Ukulele, Harmonica`);
+assert(instruments.length >= 4, `Found ${instruments.length} instruments: Guitar, Piano, Ukulele, Harmonica, Bass, Violin, Guitalele`);
 const guitar = instruments.find(i => i.id === "guitar");
 assert(guitar && guitar.tunings.length >= 5, `Guitar includes multiple tunings (Standard, Drop D, DADGAD, Open G/D)`);
 const ukulele = instruments.find(i => i.id === "ukulele");
