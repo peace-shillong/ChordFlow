@@ -1,38 +1,38 @@
 import { NOTE_NAMES } from "./chord.js";
 export const INSTRUMENT_STRINGS = {
     guitar: [
-        { name: "6th - E2", midi: 40, freq: 82.41 },
-        { name: "5th - A2", midi: 45, freq: 110.00 },
-        { name: "4th - D3", midi: 50, freq: 146.83 },
-        { name: "3rd - G3", midi: 55, freq: 196.00 },
-        { name: "2nd - B3", midi: 59, freq: 246.94 },
-        { name: "1st - E4", midi: 64, freq: 329.63 }
-    ],
-    ukulele: [
-        { name: "4th - G4", midi: 67, freq: 392.00 },
-        { name: "3rd - C4", midi: 60, freq: 261.63 },
-        { name: "2nd - E4", midi: 64, freq: 329.63 },
-        { name: "1st - A4", midi: 69, freq: 440.00 }
-    ],
-    guitalele: [
-        { name: "6th - A2", midi: 45, freq: 110.00 },
-        { name: "5th - D3", midi: 50, freq: 146.83 },
-        { name: "4th - G3", midi: 55, freq: 196.00 },
-        { name: "3rd - C4", midi: 60, freq: 261.63 },
-        { name: "2nd - E4", midi: 64, freq: 329.63 },
-        { name: "1st - A4", midi: 69, freq: 440.00 }
+        { name: "6: E2", midi: 40, freq: 82.41 },
+        { name: "5: A2", midi: 45, freq: 110.00 },
+        { name: "4: D3", midi: 50, freq: 146.83 },
+        { name: "3: G3", midi: 55, freq: 196.00 },
+        { name: "2: B3", midi: 59, freq: 246.94 },
+        { name: "1: E4", midi: 64, freq: 329.63 }
     ],
     violin: [
-        { name: "4th - G3", midi: 55, freq: 196.00 },
-        { name: "3rd - D4", midi: 62, freq: 293.66 },
-        { name: "2nd - A4", midi: 69, freq: 440.00 },
-        { name: "1st - E5", midi: 76, freq: 659.25 }
+        { name: "4: G3", midi: 55, freq: 196.00 },
+        { name: "3: D4", midi: 62, freq: 293.66 },
+        { name: "2: A4", midi: 69, freq: 440.00 },
+        { name: "1: E5", midi: 76, freq: 659.25 }
+    ],
+    ukulele: [
+        { name: "4: G4", midi: 67, freq: 392.00 },
+        { name: "3: C4", midi: 60, freq: 261.63 },
+        { name: "2: E4", midi: 64, freq: 329.63 },
+        { name: "1: A4", midi: 69, freq: 440.00 }
     ],
     bass: [
-        { name: "4th - E1", midi: 28, freq: 41.20 },
-        { name: "3rd - A1", midi: 33, freq: 55.00 },
-        { name: "2nd - D2", midi: 38, freq: 73.42 },
-        { name: "1st - G2", midi: 43, freq: 98.00 }
+        { name: "4: E1", midi: 28, freq: 41.20 },
+        { name: "3: A1", midi: 33, freq: 55.00 },
+        { name: "2: D2", midi: 38, freq: 73.42 },
+        { name: "1: G2", midi: 43, freq: 98.00 }
+    ],
+    guitalele: [
+        { name: "6: A2", midi: 45, freq: 110.00 },
+        { name: "5: D3", midi: 50, freq: 146.83 },
+        { name: "4: G3", midi: 55, freq: 196.00 },
+        { name: "3: C4", midi: 60, freq: 261.63 },
+        { name: "2: E4", midi: 64, freq: 329.63 },
+        { name: "1: A4", midi: 69, freq: 440.00 }
     ]
 };
 export class TunerController {
@@ -44,29 +44,34 @@ export class TunerController {
         this.animFrameId = null;
         this.selectedInstrument = "guitar";
         this.selectedStringIndex = 0;
-        this.inTuneTimer = 0;
+        this.inTuneConsecutiveHits = 0;
+        this.isAutoAdvancing = false;
         // DOM elements
         this.modalEl = null;
+        this.micPromptEl = null;
+        this.instPillsContainerEl = null;
+        this.stringPillsContainerEl = null;
         this.noteDisplayEl = null;
         this.freqDisplayEl = null;
         this.centsDisplayEl = null;
         this.needleEl = null;
-        this.stringSelectEl = null;
-        this.instSelectEl = null;
         this.statusEl = null;
     }
     init() {
         this.cacheDom();
         this.bindEvents();
+        this.renderInstrumentPills();
+        this.renderStringPills();
     }
     cacheDom() {
         this.modalEl = document.getElementById("tuner-modal");
+        this.micPromptEl = document.getElementById("tuner-mic-prompt");
+        this.instPillsContainerEl = document.getElementById("tuner-inst-pills");
+        this.stringPillsContainerEl = document.getElementById("tuner-string-pills");
         this.noteDisplayEl = document.getElementById("tuner-detected-note");
         this.freqDisplayEl = document.getElementById("tuner-detected-freq");
         this.centsDisplayEl = document.getElementById("tuner-cents-deviation");
         this.needleEl = document.getElementById("tuner-needle");
-        this.stringSelectEl = document.getElementById("tuner-string-select");
-        this.instSelectEl = document.getElementById("tuner-instrument-select");
         this.statusEl = document.getElementById("tuner-status-msg");
     }
     bindEvents() {
@@ -76,23 +81,52 @@ export class TunerController {
         document.getElementById("btn-close-tuner")?.addEventListener("click", () => {
             this.close();
         });
-        this.instSelectEl?.addEventListener("change", () => {
-            this.selectedInstrument = this.instSelectEl?.value || "guitar";
-            this.selectedStringIndex = 0;
-            this.populateStringSelect();
+    }
+    renderInstrumentPills() {
+        if (!this.instPillsContainerEl)
+            return;
+        const pills = this.instPillsContainerEl.querySelectorAll(".tuner-inst-pill");
+        pills.forEach(pill => {
+            const inst = pill.getAttribute("data-tuner-inst");
+            pill.classList.toggle("active", inst === this.selectedInstrument);
+            pill.addEventListener("click", () => {
+                if (inst) {
+                    this.selectedInstrument = inst;
+                    this.selectedStringIndex = 0;
+                    this.inTuneConsecutiveHits = 0;
+                    this.renderInstrumentPills();
+                    this.renderStringPills();
+                }
+            });
         });
-        this.stringSelectEl?.addEventListener("change", () => {
-            this.selectedStringIndex = parseInt(this.stringSelectEl?.value || "0", 10);
-        });
-        document.getElementById("btn-tuner-next-string")?.addEventListener("click", () => {
-            this.advanceString();
+    }
+    renderStringPills() {
+        if (!this.stringPillsContainerEl)
+            return;
+        this.stringPillsContainerEl.innerHTML = "";
+        const strings = INSTRUMENT_STRINGS[this.selectedInstrument] || INSTRUMENT_STRINGS.guitar;
+        strings.forEach((str, idx) => {
+            const btn = document.createElement("button");
+            btn.className = `tuner-string-pill ${idx === this.selectedStringIndex ? "active" : ""}`;
+            btn.innerHTML = `
+        <span class="str-name">${str.name}</span>
+        <span class="str-freq">${str.freq.toFixed(1)}Hz</span>
+      `;
+            btn.addEventListener("click", () => {
+                this.selectedStringIndex = idx;
+                this.inTuneConsecutiveHits = 0;
+                this.renderStringPills();
+            });
+            this.stringPillsContainerEl.appendChild(btn);
         });
     }
     async open() {
         if (!this.modalEl)
             return;
         this.modalEl.style.display = "flex";
-        this.populateStringSelect();
+        this.inTuneConsecutiveHits = 0;
+        this.renderInstrumentPills();
+        this.renderStringPills();
         await this.startListening();
     }
     close() {
@@ -101,30 +135,19 @@ export class TunerController {
         this.modalEl.style.display = "none";
         this.stopListening();
     }
-    populateStringSelect() {
-        if (!this.stringSelectEl)
-            return;
-        const strings = INSTRUMENT_STRINGS[this.selectedInstrument] || INSTRUMENT_STRINGS.guitar;
-        this.stringSelectEl.innerHTML = "";
-        strings.forEach((str, idx) => {
-            const opt = document.createElement("option");
-            opt.value = `${idx}`;
-            opt.textContent = `${str.name} (${str.freq.toFixed(1)} Hz)`;
-            this.stringSelectEl.appendChild(opt);
-        });
-        this.stringSelectEl.value = `${this.selectedStringIndex}`;
-    }
     advanceString() {
         const strings = INSTRUMENT_STRINGS[this.selectedInstrument] || INSTRUMENT_STRINGS.guitar;
         this.selectedStringIndex = (this.selectedStringIndex + 1) % strings.length;
-        if (this.stringSelectEl) {
-            this.stringSelectEl.value = `${this.selectedStringIndex}`;
-        }
-        this.inTuneTimer = 0;
+        this.inTuneConsecutiveHits = 0;
+        this.renderStringPills();
     }
     async startListening() {
         if (this.isListening)
             return;
+        if (this.micPromptEl) {
+            this.micPromptEl.textContent = "🎙️ Requesting microphone permission...";
+            this.micPromptEl.className = "tuner-mic-prompt prompt-pending";
+        }
         try {
             this.mediaStream = await navigator.mediaDevices.getUserMedia({
                 audio: {
@@ -140,14 +163,22 @@ export class TunerController {
             this.analyser.fftSize = 4096;
             source.connect(this.analyser);
             this.isListening = true;
+            if (this.micPromptEl) {
+                this.micPromptEl.textContent = "🟢 Microphone active — Play a string to tune.";
+                this.micPromptEl.className = "tuner-mic-prompt prompt-active";
+            }
             if (this.statusEl)
-                this.statusEl.textContent = "Listening to microphone...";
+                this.statusEl.textContent = "Listening...";
             this.updateLoop();
         }
         catch (err) {
             console.warn("Microphone access denied or error:", err);
+            if (this.micPromptEl) {
+                this.micPromptEl.textContent = "🔴 Microphone permission required for the tuner. Please allow mic access in your browser.";
+                this.micPromptEl.className = "tuner-mic-prompt prompt-denied";
+            }
             if (this.statusEl)
-                this.statusEl.textContent = "Mic permission required for Tuner.";
+                this.statusEl.textContent = "Mic access blocked";
         }
     }
     stopListening() {
@@ -230,7 +261,31 @@ export class TunerController {
         }
         return sampleRate / T0;
     }
+    playChime() {
+        if (!this.audioCtx)
+            return;
+        try {
+            const osc = this.audioCtx.createOscillator();
+            const gain = this.audioCtx.createGain();
+            const now = this.audioCtx.currentTime;
+            osc.type = "sine";
+            osc.frequency.setValueAtTime(880, now);
+            osc.frequency.setValueAtTime(1320, now + 0.1);
+            gain.gain.setValueAtTime(0.001, now);
+            gain.gain.linearRampToValueAtTime(0.3, now + 0.04);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+            osc.connect(gain);
+            gain.connect(this.audioCtx.destination);
+            osc.start(now);
+            osc.stop(now + 0.4);
+        }
+        catch {
+            // Ignore
+        }
+    }
     processPitch(freq) {
+        if (this.isAutoAdvancing)
+            return;
         const strings = INSTRUMENT_STRINGS[this.selectedInstrument] || INSTRUMENT_STRINGS.guitar;
         const target = strings[this.selectedStringIndex] || strings[0];
         const cents = Math.round(1200 * Math.log2(freq / target.freq));
@@ -251,24 +306,37 @@ export class TunerController {
             const absCents = Math.abs(cents);
             if (absCents <= 4) {
                 this.needleEl.style.background = "#10b981";
-                if (this.statusEl)
-                    this.statusEl.textContent = "🎯 In Tune!";
-                this.inTuneTimer++;
-                if (this.inTuneTimer > 40) {
-                    this.advanceString();
+                this.inTuneConsecutiveHits++;
+                if (this.statusEl) {
+                    this.statusEl.textContent = `🎯 In Tune! (${this.inTuneConsecutiveHits}/3)`;
+                }
+                // When in-tune confirmed 3 times (hits threshold ~24 analysis frames)
+                if (this.inTuneConsecutiveHits >= 24 && !this.isAutoAdvancing) {
+                    this.isAutoAdvancing = true;
+                    this.playChime();
+                    if (this.statusEl) {
+                        this.statusEl.textContent = "🎉 In Tune! Advancing to next string...";
+                    }
+                    setTimeout(() => {
+                        this.advanceString();
+                        this.isAutoAdvancing = false;
+                        this.inTuneConsecutiveHits = 0;
+                        if (this.statusEl)
+                            this.statusEl.textContent = "Ready for next string";
+                    }, 900);
                 }
             }
             else if (absCents <= 15) {
                 this.needleEl.style.background = "#f59e0b";
                 if (this.statusEl)
                     this.statusEl.textContent = cents > 0 ? "Tune Down ▾" : "Tune Up ▴";
-                this.inTuneTimer = 0;
+                this.inTuneConsecutiveHits = 0;
             }
             else {
                 this.needleEl.style.background = "#ef4444";
                 if (this.statusEl)
                     this.statusEl.textContent = cents > 0 ? "Sharp (Tune Down ▾)" : "Flat (Tune Up ▴)";
-                this.inTuneTimer = 0;
+                this.inTuneConsecutiveHits = 0;
             }
         }
     }

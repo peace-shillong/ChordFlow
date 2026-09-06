@@ -438,18 +438,22 @@
         <button class="modal-close-btn" id="btn-close-tuner" title="Close">✕</button>
       </div>
       <div class="modal-body tuner-body">
-        <div class="tuner-controls-row">
-          <select id="tuner-instrument-select" class="custom-select">
-            <option value="guitar">Guitar (EADGBE)</option>
-            <option value="ukulele">Ukulele (GCEA)</option>
-            <option value="guitalele">Guitalele (ADGCEA)</option>
-            <option value="violin">Violin (GDAE)</option>
-            <option value="bass">Bass (EADG)</option>
-          </select>
-
-          <select id="tuner-string-select" class="custom-select"></select>
-          <button id="btn-tuner-next-string" class="small-btn">Next String ❯</button>
+        <!-- Mic Permission Banner -->
+        <div id="tuner-mic-prompt" class="tuner-mic-prompt">
+          🎙️ Please allow microphone access to start the tuner.
         </div>
+
+        <!-- Instrument Selection Buttons Row -->
+        <div class="tuner-inst-pills-row" id="tuner-inst-pills" role="tablist" aria-label="Select Tuner Instrument">
+          <button class="tuner-inst-pill active" data-tuner-inst="guitar">🎸 Guitar</button>
+          <button class="tuner-inst-pill" data-tuner-inst="violin">🎻 Violin</button>
+          <button class="tuner-inst-pill" data-tuner-inst="ukulele">🪕 Ukulele</button>
+          <button class="tuner-inst-pill" data-tuner-inst="bass">🎸 Bass</button>
+          <button class="tuner-inst-pill" data-tuner-inst="guitalele">🪕 Guitalele</button>
+        </div>
+
+        <!-- Target Strings Selection Buttons Row -->
+        <div class="tuner-string-pills-row" id="tuner-string-pills" role="group" aria-label="Select String to Tune"></div>
 
         <!-- Gauge Dial Display -->
         <div class="tuner-gauge-container">

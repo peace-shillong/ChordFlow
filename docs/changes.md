@@ -335,3 +335,9 @@ since if user press and holds the number key also the chord gets played infinite
 4. The Top bar which shows the instrument list has a horizontal scrollbar which is not good UX, let that row fill the entire row and the instruments be centered aligned so I don't need to scroll in desktop mode
 5. For Tablets, the Horizontal view is perfect. In portrait view the Chord Library shuold not fill the entire row, instead it should show the Chord Progression and Chord Diagram in the same row with 50% width each and the chord library can be displayed in the next row. This view can also be applied to mobile view in horizal layout.
 6. In The Chord Diagram Card, The Notes button netx to the Chord button doesn't seem to do anything or work properly check it out and tell me what is the purpose of this button.
+
+
+Few things to do after changes mod is completed
+1. Theme Light/Dark should be save in localstorage of browser so next time user visits the theme will be take from there
+2. Audio Synthesis Parameters - have a button to reset the settings to the default for each instrument if a user has made his changes.
+3. In Advance mode the Strum Pattern Editor (16 Subdivisions) should show the current strum pattern selected from the settings modal Strum Pattern in the editor so that it can be edited and applied by pressing an apply button, so the strum-visualizer-ticker will display the updated pattern and the updated strumming pattern will also be played for the current chord progression, The Strum Pattern Editor should also allow user to change the existing strumming pattern by selecting the options from one of the drop down options, The Strum Pattern Editor, Visualer and the strumming play are related to each other. In Beginner mode, the Strumming Pattern Visualer should be visible to the user.

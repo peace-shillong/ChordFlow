@@ -34,6 +34,43 @@ export class DiagramRenderer {
     resetPianoPan() {
         this.pianoManualPan = 0;
     }
+    getNoteLabelAndColor(midi, chord, toggles, isDark = true) {
+        const rootMidi = noteNameToMidi(chord.root + "4");
+        const semitonesFromRoot = ((midi % 12) - (rootMidi % 12) + 12) % 12;
+        const isRoot = semitonesFromRoot === 0;
+        const isThird = semitonesFromRoot === 3 || semitonesFromRoot === 4;
+        const isFifth = semitonesFromRoot === 7 || semitonesFromRoot === 6 || semitonesFromRoot === 8;
+        const isSeventh = semitonesFromRoot === 10 || semitonesFromRoot === 11 || semitonesFromRoot === 9;
+        let bg = isDark ? "#6366f1" : "#4f46e5";
+        if (isRoot) {
+            bg = isDark ? "#f59e0b" : "#d97706"; // Gold/Amber for root
+        }
+        else if (isThird) {
+            bg = isDark ? "#38bdf8" : "#0284c7"; // Sky blue for 3rd
+        }
+        else if (isFifth) {
+            bg = isDark ? "#10b981" : "#059669"; // Emerald for 5th
+        }
+        else if (isSeventh) {
+            bg = isDark ? "#ec4899" : "#db2777"; // Pink for 7th
+        }
+        const noteName = midiToNoteName(midi).replace(/\d+/, "");
+        const intervalName = INTERVAL_NAMES[semitonesFromRoot] || (isRoot ? "1" : `${semitonesFromRoot}`);
+        let label = "";
+        if (toggles?.showIntervals && toggles?.showNotes) {
+            label = isRoot ? `${noteName}` : intervalName;
+        }
+        else if (toggles?.showIntervals) {
+            label = intervalName;
+        }
+        else if (toggles?.showNotes) {
+            label = noteName;
+        }
+        else {
+            label = isRoot ? "1" : "";
+        }
+        return { label, bg, text: "#ffffff", isRoot };
+    }
     render(canvas, chord, instrument, options = {}) {
         const isDark = options.theme !== "light";
         const width = options.width || (canvas.parentElement ? canvas.parentElement.clientWidth : 340);
@@ -41,7 +78,7 @@ export class DiagramRenderer {
         const ctx = this.prepareCanvas(canvas, width, height);
         this.clickTargets = [];
         ctx.clearRect(0, 0, width, height);
-        const viewMode = options.viewMode || (instrument === "harmonica" || instrument === "violin" || instrument === "bass" ? "notes" : "chord");
+        const viewMode = options.viewMode || "chord";
         const voicing = chord.voicings?.find(v => v.id === options.voicingId) || chord.voicings?.[0];
         switch (instrument) {
             case "guitar":
@@ -67,15 +104,17 @@ export class DiagramRenderer {
                 break;
         }
     }
+    // --- Guitar Diagram ---
     renderGuitar(ctx, w, h, chord, capo = 0, tuningStrings = [40, 45, 50, 55, 59, 64], voicing, viewMode = "chord", toggles, isDark = true) {
         const numStrings = 6;
-        const numFrets = 5;
+        const isNotesMode = viewMode === "notes";
+        const numFrets = isNotesMode ? 12 : 5;
         const frets = voicing?.guitar || chord.instruments.guitar?.frets || [-1, 0, 2, 2, 2, 0];
         const positiveFrets = frets.filter(f => f > 0);
         const maxFret = positiveFrets.length > 0 ? Math.max(...positiveFrets) : 0;
-        const baseFret = maxFret > 5 ? Math.min(...positiveFrets) : 1;
-        const padX = 50;
-        const padY = 46;
+        const baseFret = !isNotesMode && maxFret > 5 ? Math.min(...positiveFrets) : 1;
+        const padX = isNotesMode ? 32 : 50;
+        const padY = isNotesMode ? 36 : 46;
         const gridW = w - padX * 2;
         const gridH = h - padY * 2 - 10;
         const stringSpacing = gridW / (numStrings - 1);
@@ -83,13 +122,11 @@ export class DiagramRenderer {
         const subtextColor = isDark ? "#94a3b8" : "#64748b";
         const fretColor = isDark ? "rgba(255, 255, 255, 0.25)" : "rgba(0, 0, 0, 0.2)";
         const nutColor = isDark ? "#f8fafc" : "#1e293b";
-        const dotColor = isDark ? "#6366f1" : "#4f46e5";
-        const dotTextColor = "#ffffff";
         const capoColor = isDark ? "rgba(236, 72, 153, 0.85)" : "rgba(219, 39, 119, 0.85)";
-        ctx.font = "bold 13px system-ui, -apple-system, sans-serif";
-        ctx.fillStyle = subtextColor;
-        ctx.textAlign = "left";
-        if (baseFret > 1) {
+        if (baseFret > 1 && !isNotesMode) {
+            ctx.font = "bold 13px system-ui, -apple-system, sans-serif";
+            ctx.fillStyle = subtextColor;
+            ctx.textAlign = "left";
             ctx.fillText(`${baseFret}fr`, padX - 35, padY + fretSpacing * 0.7);
         }
         ctx.fillStyle = isDark ? "rgba(30, 41, 59, 0.4)" : "rgba(241, 245, 249, 0.6)";
@@ -98,7 +135,7 @@ export class DiagramRenderer {
         ctx.fill();
         if (baseFret === 1) {
             ctx.strokeStyle = nutColor;
-            ctx.lineWidth = 6;
+            ctx.lineWidth = isNotesMode ? 4 : 6;
             ctx.beginPath();
             ctx.moveTo(padX - 4, padY);
             ctx.lineTo(padX + gridW + 4, padY);
@@ -122,7 +159,7 @@ export class DiagramRenderer {
             ctx.lineTo(x, padY + gridH);
             ctx.stroke();
         }
-        if (capo > 0 && capo <= numFrets) {
+        if (capo > 0 && capo <= numFrets && !isNotesMode) {
             const capoY = padY + (capo - 0.5) * fretSpacing;
             ctx.fillStyle = capoColor;
             ctx.beginPath();
@@ -133,6 +170,7 @@ export class DiagramRenderer {
             ctx.textAlign = "center";
             ctx.fillText(`CAPO ${capo}`, padX + gridW / 2, capoY + 3);
         }
+        // String open notes names at bottom
         ctx.font = "11px system-ui, sans-serif";
         ctx.fillStyle = subtextColor;
         ctx.textAlign = "center";
@@ -142,57 +180,87 @@ export class DiagramRenderer {
             const noteName = midiToNoteName(openMidi).replace(/\d+/, "");
             ctx.fillText(noteName, x, padY + gridH + 16);
         }
-        for (let s = 0; s < numStrings; s++) {
-            const rawFret = frets[s];
-            const fret = rawFret > 0 && baseFret > 1 ? rawFret - baseFret + 1 : rawFret;
-            const x = padX + s * stringSpacing;
-            const openMidi = (tuningStrings[s] || 40) + capo;
-            if (rawFret === -1) {
-                ctx.font = "bold 13px system-ui, sans-serif";
-                ctx.fillStyle = isDark ? "#ef4444" : "#dc2626";
-                ctx.textAlign = "center";
-                ctx.fillText("✕", x, padY - 12);
+        // Target chord pitch classes
+        const chordPitchClasses = new Set(chord.notes.map(n => noteNameToMidi(n) % 12));
+        if (isNotesMode) {
+            // --- Full Fretboard Chord Tone Map (Notes Mode) ---
+            for (let s = 0; s < numStrings; s++) {
+                const x = padX + s * stringSpacing;
+                const openMidi = (tuningStrings[s] || 40) + capo;
+                for (let f = 0; f <= numFrets; f++) {
+                    const midi = openMidi + f;
+                    if (chordPitchClasses.has(midi % 12)) {
+                        const y = f === 0 ? padY - 14 : padY + (f - 0.5) * fretSpacing;
+                        const info = this.getNoteLabelAndColor(midi, chord, toggles, isDark);
+                        ctx.fillStyle = info.bg;
+                        ctx.beginPath();
+                        ctx.arc(x, y, f === 0 ? 8 : 7.5, 0, Math.PI * 2);
+                        ctx.fill();
+                        if (info.label) {
+                            ctx.fillStyle = info.text;
+                            ctx.font = "bold 8px system-ui, sans-serif";
+                            ctx.textAlign = "center";
+                            ctx.fillText(info.label, x, y + 2.8);
+                        }
+                        this.clickTargets.push({ x, y, radius: 10, midi, instrument: "guitar" });
+                    }
+                }
             }
-            else if (rawFret === 0) {
-                ctx.strokeStyle = isDark ? "#10b981" : "#059669";
-                ctx.lineWidth = 2;
-                ctx.beginPath();
-                ctx.arc(x, padY - 16, 6, 0, Math.PI * 2);
-                ctx.stroke();
-                this.clickTargets.push({ x, y: padY - 16, radius: 10, midi: openMidi, instrument: "guitar" });
-            }
-            else if (fret > 0 && fret <= numFrets) {
-                const y = padY + (fret - 0.5) * fretSpacing;
-                const midi = (tuningStrings[s] || 40) + rawFret + capo;
-                const noteName = midiToNoteName(midi).replace(/\d+/, "");
-                ctx.fillStyle = dotColor;
-                ctx.beginPath();
-                ctx.arc(x, y, 11, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.fillStyle = dotTextColor;
-                ctx.font = "bold 10px system-ui, sans-serif";
-                ctx.textAlign = "center";
-                let label = "";
-                if (toggles?.showNotes || viewMode === "notes") {
-                    label = noteName;
+        }
+        else {
+            // --- Specific Chord Voicing Shape (Chord Mode) ---
+            for (let s = 0; s < numStrings; s++) {
+                const rawFret = frets[s];
+                const fret = rawFret > 0 && baseFret > 1 ? rawFret - baseFret + 1 : rawFret;
+                const x = padX + s * stringSpacing;
+                const openMidi = (tuningStrings[s] || 40) + capo;
+                if (rawFret === -1) {
+                    ctx.font = "bold 13px system-ui, sans-serif";
+                    ctx.fillStyle = isDark ? "#ef4444" : "#dc2626";
+                    ctx.textAlign = "center";
+                    ctx.fillText("✕", x, padY - 12);
                 }
-                else if (toggles?.showIntervals) {
-                    const semitonesFromRoot = (midi % 12 - noteNameToMidi(chord.root + "4") % 12 + 12) % 12;
-                    label = INTERVAL_NAMES[semitonesFromRoot] || "";
+                else if (rawFret === 0) {
+                    const info = this.getNoteLabelAndColor(openMidi, chord, toggles, isDark);
+                    ctx.fillStyle = info.bg;
+                    ctx.beginPath();
+                    ctx.arc(x, padY - 16, 9, 0, Math.PI * 2);
+                    ctx.fill();
+                    if (info.label) {
+                        ctx.fillStyle = info.text;
+                        ctx.font = "bold 9px system-ui, sans-serif";
+                        ctx.textAlign = "center";
+                        ctx.fillText(info.label, x, padY - 13);
+                    }
+                    this.clickTargets.push({ x, y: padY - 16, radius: 11, midi: openMidi, instrument: "guitar" });
                 }
-                if (label) {
-                    ctx.fillText(label, x, y + 3.5);
+                else if (fret > 0 && fret <= numFrets) {
+                    const y = padY + (fret - 0.5) * fretSpacing;
+                    const midi = (tuningStrings[s] || 40) + rawFret + capo;
+                    const info = this.getNoteLabelAndColor(midi, chord, toggles, isDark);
+                    ctx.fillStyle = info.bg;
+                    ctx.beginPath();
+                    ctx.arc(x, y, 11, 0, Math.PI * 2);
+                    ctx.fill();
+                    if (info.label) {
+                        ctx.fillStyle = info.text;
+                        ctx.font = "bold 10px system-ui, sans-serif";
+                        ctx.textAlign = "center";
+                        ctx.fillText(info.label, x, y + 3.5);
+                    }
+                    this.clickTargets.push({ x, y, radius: 13, midi, instrument: "guitar" });
                 }
-                this.clickTargets.push({ x, y, radius: 13, midi, instrument: "guitar" });
             }
         }
     }
+    // --- Ukulele Diagram ---
     renderUkulele(ctx, w, h, chord, capo = 0, tuningStrings = [67, 60, 64, 69], voicing, viewMode = "chord", toggles, isDark = true) {
         const numStrings = 4;
-        const numFrets = 4;
+        const isNotesMode = viewMode === "notes";
+        const numFrets = isNotesMode ? 12 : 5;
         const frets = voicing?.ukulele || chord.instruments.ukulele?.frets || [0, 0, 0, 3];
-        const padX = 64;
-        const padY = 46;
+        const padX = isNotesMode ? 36 : 64;
+        const padY = isNotesMode ? 36 : 46;
         const gridW = w - padX * 2;
         const gridH = h - padY * 2 - 10;
         const stringSpacing = gridW / (numStrings - 1);
@@ -200,14 +268,12 @@ export class DiagramRenderer {
         const subtextColor = isDark ? "#94a3b8" : "#64748b";
         const fretColor = isDark ? "rgba(255, 255, 255, 0.25)" : "rgba(0, 0, 0, 0.2)";
         const nutColor = isDark ? "#f8fafc" : "#1e293b";
-        const dotColor = isDark ? "#06b6d4" : "#0891b2";
-        const dotTextColor = "#ffffff";
         ctx.fillStyle = isDark ? "rgba(30, 41, 59, 0.4)" : "rgba(241, 245, 249, 0.6)";
         ctx.beginPath();
         ctx.roundRect(padX - 4, padY, gridW + 8, gridH, 6);
         ctx.fill();
         ctx.strokeStyle = nutColor;
-        ctx.lineWidth = 6;
+        ctx.lineWidth = isNotesMode ? 4 : 6;
         ctx.beginPath();
         ctx.moveTo(padX - 4, padY);
         ctx.lineTo(padX + gridW + 4, padY);
@@ -239,44 +305,83 @@ export class DiagramRenderer {
             const noteName = midiToNoteName(openMidi).replace(/\d+/, "");
             ctx.fillText(noteName, x, padY + gridH + 16);
         }
-        for (let s = 0; s < numStrings; s++) {
-            const fret = frets[s];
-            const x = padX + s * stringSpacing;
-            const openMidi = (tuningStrings[s] || 60) + capo;
-            if (fret === -1) {
-                ctx.font = "bold 13px system-ui, sans-serif";
-                ctx.fillStyle = isDark ? "#ef4444" : "#dc2626";
-                ctx.textAlign = "center";
-                ctx.fillText("✕", x, padY - 12);
+        const chordPitchClasses = new Set(chord.notes.map(n => noteNameToMidi(n) % 12));
+        if (isNotesMode) {
+            for (let s = 0; s < numStrings; s++) {
+                const x = padX + s * stringSpacing;
+                const openMidi = (tuningStrings[s] || 60) + capo;
+                for (let f = 0; f <= numFrets; f++) {
+                    const midi = openMidi + f;
+                    if (chordPitchClasses.has(midi % 12)) {
+                        const y = f === 0 ? padY - 14 : padY + (f - 0.5) * fretSpacing;
+                        const info = this.getNoteLabelAndColor(midi, chord, toggles, isDark);
+                        ctx.fillStyle = info.bg;
+                        ctx.beginPath();
+                        ctx.arc(x, y, f === 0 ? 8 : 7.5, 0, Math.PI * 2);
+                        ctx.fill();
+                        if (info.label) {
+                            ctx.fillStyle = info.text;
+                            ctx.font = "bold 8px system-ui, sans-serif";
+                            ctx.textAlign = "center";
+                            ctx.fillText(info.label, x, y + 2.8);
+                        }
+                        this.clickTargets.push({ x, y, radius: 10, midi, instrument: "ukulele" });
+                    }
+                }
             }
-            else if (fret === 0) {
-                ctx.strokeStyle = isDark ? "#10b981" : "#059669";
-                ctx.lineWidth = 2;
-                ctx.beginPath();
-                ctx.arc(x, padY - 16, 6, 0, Math.PI * 2);
-                ctx.stroke();
-                this.clickTargets.push({ x, y: padY - 16, radius: 10, midi: openMidi, instrument: "ukulele" });
-            }
-            else if (fret > 0 && fret <= numFrets) {
-                const y = padY + (fret - 0.5) * fretSpacing;
-                const midi = (tuningStrings[s] || 60) + fret + capo;
-                const noteName = midiToNoteName(midi).replace(/\d+/, "");
-                ctx.fillStyle = dotColor;
-                ctx.beginPath();
-                ctx.arc(x, y, 11, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.fillStyle = dotTextColor;
-                ctx.font = "bold 10px system-ui, sans-serif";
-                ctx.textAlign = "center";
-                ctx.fillText(viewMode === "notes" || toggles?.showNotes ? noteName : `${fret}`, x, y + 3.5);
-                this.clickTargets.push({ x, y, radius: 13, midi, instrument: "ukulele" });
+        }
+        else {
+            for (let s = 0; s < numStrings; s++) {
+                const fret = frets[s];
+                const x = padX + s * stringSpacing;
+                const openMidi = (tuningStrings[s] || 60) + capo;
+                if (fret === -1) {
+                    ctx.font = "bold 13px system-ui, sans-serif";
+                    ctx.fillStyle = isDark ? "#ef4444" : "#dc2626";
+                    ctx.textAlign = "center";
+                    ctx.fillText("✕", x, padY - 12);
+                }
+                else if (fret === 0) {
+                    const info = this.getNoteLabelAndColor(openMidi, chord, toggles, isDark);
+                    ctx.fillStyle = info.bg;
+                    ctx.beginPath();
+                    ctx.arc(x, padY - 16, 9, 0, Math.PI * 2);
+                    ctx.fill();
+                    if (info.label) {
+                        ctx.fillStyle = info.text;
+                        ctx.font = "bold 9px system-ui, sans-serif";
+                        ctx.textAlign = "center";
+                        ctx.fillText(info.label, x, padY - 13);
+                    }
+                    this.clickTargets.push({ x, y: padY - 16, radius: 11, midi: openMidi, instrument: "ukulele" });
+                }
+                else if (fret > 0 && fret <= numFrets) {
+                    const y = padY + (fret - 0.5) * fretSpacing;
+                    const midi = (tuningStrings[s] || 60) + fret + capo;
+                    const info = this.getNoteLabelAndColor(midi, chord, toggles, isDark);
+                    ctx.fillStyle = info.bg;
+                    ctx.beginPath();
+                    ctx.arc(x, y, 11, 0, Math.PI * 2);
+                    ctx.fill();
+                    if (info.label) {
+                        ctx.fillStyle = info.text;
+                        ctx.font = "bold 10px system-ui, sans-serif";
+                        ctx.textAlign = "center";
+                        ctx.fillText(info.label, x, y + 3.5);
+                    }
+                    this.clickTargets.push({ x, y, radius: 13, midi, instrument: "ukulele" });
+                }
             }
         }
     }
+    // --- Guitalele Diagram ---
     renderGuitalele(ctx, w, h, chord, capo = 0, tuningStrings = [45, 50, 55, 60, 64, 69], voicing, viewMode = "chord", toggles, isDark = true) {
         this.renderGuitar(ctx, w, h, chord, capo, tuningStrings, voicing, viewMode, toggles, isDark);
     }
-    renderPiano(ctx, w, h, chord, inversionIndex = 0, voicing, _viewMode = "chord", _toggles, isDark = true) {
+    // --- Piano Diagram ---
+    renderPiano(ctx, w, h, chord, inversionIndex = 0, voicing, viewMode = "chord", toggles, isDark = true) {
+        const isNotesMode = viewMode === "notes";
+        const chordPitchClasses = new Set(chord.notes.map(n => noteNameToMidi(n) % 12));
         const activeMidiSet = new Set();
         const invNotes = voicing?.piano || getInversionNotes(chord, inversionIndex).map(n => noteNameToMidi(n));
         invNotes.forEach(m => activeMidiSet.add(m));
@@ -297,8 +402,7 @@ export class DiagramRenderer {
         const blackKeyW = Math.round(whiteKeyW * 0.62);
         const blackKeyH = Math.round(whiteKeyH * 0.63);
         const padY = Math.max(26, Math.round((h - whiteKeyH) / 2));
-        const activeWhiteColor = isDark ? "#6366f1" : "#4f46e5";
-        const activeBlackColor = isDark ? "#ec4899" : "#db2777";
+        // Piano fallboard & red felt strip
         ctx.fillStyle = isDark ? "#1e293b" : "#334155";
         ctx.beginPath();
         ctx.roundRect(padX - 4, padY - 12, keyboardW + 8, 12, [5, 5, 0, 0]);
@@ -327,28 +431,45 @@ export class DiagramRenderer {
             }
             currentMidi++;
         }
+        // Draw White Keys
         for (const k of whiteKeys) {
-            const isActive = activeMidiSet.has(k.midi);
-            ctx.fillStyle = isActive ? activeWhiteColor : isDark ? "#f8fafc" : "#ffffff";
+            const isKeyActive = isNotesMode ? chordPitchClasses.has(k.midi % 12) : activeMidiSet.has(k.midi);
+            const info = isKeyActive ? this.getNoteLabelAndColor(k.midi, chord, toggles, isDark) : null;
+            ctx.fillStyle = isKeyActive && info ? info.bg : isDark ? "#f8fafc" : "#ffffff";
             ctx.strokeStyle = isDark ? "#475569" : "#cbd5e1";
             ctx.lineWidth = 1;
             ctx.beginPath();
             ctx.roundRect(k.x, k.y, k.w - 1, k.h, [0, 0, 4, 4]);
             ctx.fill();
             ctx.stroke();
+            if (isKeyActive && info && info.label) {
+                ctx.fillStyle = info.text;
+                ctx.font = "bold 10px system-ui, sans-serif";
+                ctx.textAlign = "center";
+                ctx.fillText(info.label, k.x + (k.w - 1) / 2, k.y + k.h - 12);
+            }
             this.clickTargets.push({ x: k.x + k.w / 2, y: k.y + k.h * 0.75, radius: k.w / 2, midi: k.midi, instrument: "piano" });
         }
+        // Draw Black Keys
         for (const k of blackKeys) {
-            const isActive = activeMidiSet.has(k.midi);
-            ctx.fillStyle = isActive ? activeBlackColor : isDark ? "#0f172a" : "#1e293b";
+            const isKeyActive = isNotesMode ? chordPitchClasses.has(k.midi % 12) : activeMidiSet.has(k.midi);
+            const info = isKeyActive ? this.getNoteLabelAndColor(k.midi, chord, toggles, isDark) : null;
+            ctx.fillStyle = isKeyActive && info ? (info.isRoot ? info.bg : (isDark ? "#ec4899" : "#db2777")) : isDark ? "#0f172a" : "#1e293b";
             ctx.strokeStyle = isDark ? "#020617" : "#0f172a";
             ctx.lineWidth = 1;
             ctx.beginPath();
             ctx.roundRect(k.x, k.y, k.w, k.h, [0, 0, 3, 3]);
             ctx.fill();
             ctx.stroke();
+            if (isKeyActive && info && info.label) {
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "bold 9px system-ui, sans-serif";
+                ctx.textAlign = "center";
+                ctx.fillText(info.label, k.x + k.w / 2, k.y + k.h - 8);
+            }
             this.clickTargets.push({ x: k.x + k.w / 2, y: k.y + k.h * 0.5, radius: k.w / 2, midi: k.midi, instrument: "piano" });
         }
+        // Paging Arrows
         ctx.fillStyle = isDark ? "rgba(255,255,255,0.4)" : "rgba(0,0,0,0.3)";
         ctx.font = "bold 14px system-ui, sans-serif";
         ctx.textAlign = "left";
@@ -356,9 +477,11 @@ export class DiagramRenderer {
         ctx.textAlign = "right";
         ctx.fillText("▶", w - 4, padY + whiteKeyH / 2);
     }
-    renderViolin(ctx, w, h, chord, tuningStrings = [55, 62, 69, 76], voicing, _viewMode = "notes", _toggles, isDark = true) {
+    // --- Violin Diagram ---
+    renderViolin(ctx, w, h, chord, tuningStrings = [55, 62, 69, 76], voicing, viewMode = "notes", toggles, isDark = true) {
         const numStrings = 4;
-        const numFrets = 4;
+        const isNotesMode = viewMode === "notes";
+        const numFrets = isNotesMode ? 7 : 4;
         const frets = voicing?.violin || chord.instruments.violin?.frets || [0, 2, 0, 0];
         const padX = 64;
         const padY = 46;
@@ -369,7 +492,6 @@ export class DiagramRenderer {
         const subtextColor = isDark ? "#94a3b8" : "#64748b";
         const fretColor = isDark ? "rgba(255, 255, 255, 0.25)" : "rgba(0, 0, 0, 0.2)";
         const nutColor = isDark ? "#d97706" : "#b45309";
-        const dotColor = isDark ? "#8b5cf6" : "#7c3aed";
         ctx.fillStyle = isDark ? "#18181b" : "#27272a";
         ctx.beginPath();
         ctx.roundRect(padX - 6, padY, gridW + 12, gridH, 8);
@@ -382,7 +504,6 @@ export class DiagramRenderer {
         ctx.stroke();
         ctx.strokeStyle = fretColor;
         ctx.lineWidth = 1;
-        ctx.setLineDash([3, 3]);
         for (let f = 1; f <= numFrets; f++) {
             const y = padY + f * fretSpacing;
             ctx.beginPath();
@@ -390,17 +511,16 @@ export class DiagramRenderer {
             ctx.lineTo(padX + gridW, y);
             ctx.stroke();
         }
-        ctx.setLineDash([]);
-        const stringNames = ["G3", "D4", "A4", "E5"];
         for (let s = 0; s < numStrings; s++) {
             const x = padX + s * stringSpacing;
-            ctx.strokeStyle = isDark ? "#e4e4e7" : "#f4f4f5";
+            ctx.strokeStyle = isDark ? "#e2e8f0" : "#94a3b8";
             ctx.lineWidth = 1.2 + (3 - s) * 0.5;
             ctx.beginPath();
             ctx.moveTo(x, padY);
             ctx.lineTo(x, padY + gridH);
             ctx.stroke();
         }
+        const stringNames = ["G3", "D4", "A4", "E5"];
         ctx.font = "11px system-ui, sans-serif";
         ctx.fillStyle = subtextColor;
         ctx.textAlign = "center";
@@ -408,40 +528,77 @@ export class DiagramRenderer {
             const x = padX + s * stringSpacing;
             ctx.fillText(stringNames[s], x, padY + gridH + 16);
         }
-        for (let s = 0; s < numStrings; s++) {
-            const fret = frets[s];
-            const x = padX + s * stringSpacing;
-            const openMidi = tuningStrings[s] || 55;
-            if (fret === 0) {
-                ctx.strokeStyle = isDark ? "#10b981" : "#059669";
-                ctx.lineWidth = 2;
-                ctx.beginPath();
-                ctx.arc(x, padY - 16, 6, 0, Math.PI * 2);
-                ctx.stroke();
-                this.clickTargets.push({ x, y: padY - 16, radius: 10, midi: openMidi, instrument: "violin" });
+        const chordPitchClasses = new Set(chord.notes.map(n => noteNameToMidi(n) % 12));
+        if (isNotesMode) {
+            for (let s = 0; s < numStrings; s++) {
+                const x = padX + s * stringSpacing;
+                const openMidi = tuningStrings[s] || 55;
+                for (let f = 0; f <= numFrets; f++) {
+                    const midi = openMidi + f;
+                    if (chordPitchClasses.has(midi % 12)) {
+                        const y = f === 0 ? padY - 14 : padY + (f - 0.5) * fretSpacing;
+                        const info = this.getNoteLabelAndColor(midi, chord, toggles, isDark);
+                        ctx.fillStyle = info.bg;
+                        ctx.beginPath();
+                        ctx.arc(x, y, f === 0 ? 8 : 7.5, 0, Math.PI * 2);
+                        ctx.fill();
+                        if (info.label) {
+                            ctx.fillStyle = info.text;
+                            ctx.font = "bold 8px system-ui, sans-serif";
+                            ctx.textAlign = "center";
+                            ctx.fillText(info.label, x, y + 2.8);
+                        }
+                        this.clickTargets.push({ x, y, radius: 10, midi, instrument: "violin" });
+                    }
+                }
             }
-            else if (fret > 0) {
-                const y = padY + (fret - 0.5) * fretSpacing;
-                const midi = openMidi + fret;
-                const noteName = midiToNoteName(midi).replace(/\d+/, "");
-                ctx.fillStyle = dotColor;
-                ctx.beginPath();
-                ctx.arc(x, y, 11, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.fillStyle = "#ffffff";
-                ctx.font = "bold 10px system-ui, sans-serif";
-                ctx.textAlign = "center";
-                ctx.fillText(noteName, x, y + 3.5);
-                this.clickTargets.push({ x, y, radius: 13, midi, instrument: "violin" });
+        }
+        else {
+            for (let s = 0; s < numStrings; s++) {
+                const fret = frets[s];
+                const x = padX + s * stringSpacing;
+                const openMidi = tuningStrings[s] || 55;
+                if (fret === 0) {
+                    const info = this.getNoteLabelAndColor(openMidi, chord, toggles, isDark);
+                    ctx.fillStyle = info.bg;
+                    ctx.beginPath();
+                    ctx.arc(x, padY - 16, 8, 0, Math.PI * 2);
+                    ctx.fill();
+                    if (info.label) {
+                        ctx.fillStyle = info.text;
+                        ctx.font = "bold 8px system-ui, sans-serif";
+                        ctx.textAlign = "center";
+                        ctx.fillText(info.label, x, padY - 13);
+                    }
+                    this.clickTargets.push({ x, y: padY - 16, radius: 10, midi: openMidi, instrument: "violin" });
+                }
+                else if (fret > 0 && fret <= numFrets) {
+                    const y = padY + (fret - 0.5) * fretSpacing;
+                    const midi = openMidi + fret;
+                    const info = this.getNoteLabelAndColor(midi, chord, toggles, isDark);
+                    ctx.fillStyle = info.bg;
+                    ctx.beginPath();
+                    ctx.arc(x, y, 11, 0, Math.PI * 2);
+                    ctx.fill();
+                    if (info.label) {
+                        ctx.fillStyle = info.text;
+                        ctx.font = "bold 10px system-ui, sans-serif";
+                        ctx.textAlign = "center";
+                        ctx.fillText(info.label, x, y + 3.5);
+                    }
+                    this.clickTargets.push({ x, y, radius: 13, midi, instrument: "violin" });
+                }
             }
         }
     }
-    renderBass(ctx, w, h, chord, tuningStrings = [28, 33, 38, 43], voicing, _viewMode = "notes", _toggles, isDark = true) {
+    // --- Bass Diagram ---
+    renderBass(ctx, w, h, chord, tuningStrings = [28, 33, 38, 43], voicing, viewMode = "notes", toggles, isDark = true) {
         const numStrings = 4;
-        const numFrets = 5;
+        const isNotesMode = viewMode === "notes";
+        const numFrets = isNotesMode ? 12 : 5;
         const frets = voicing?.bass || chord.instruments.bass?.frets || [0, 2, 2, 0];
-        const padX = 64;
-        const padY = 46;
+        const padX = isNotesMode ? 36 : 64;
+        const padY = isNotesMode ? 36 : 46;
         const gridW = w - padX * 2;
         const gridH = h - padY * 2 - 10;
         const stringSpacing = gridW / (numStrings - 1);
@@ -449,14 +606,12 @@ export class DiagramRenderer {
         const subtextColor = isDark ? "#94a3b8" : "#64748b";
         const fretColor = isDark ? "rgba(255, 255, 255, 0.25)" : "rgba(0, 0, 0, 0.2)";
         const nutColor = isDark ? "#f8fafc" : "#1e293b";
-        const rootColor = isDark ? "#f59e0b" : "#d97706";
-        const fifthColor = isDark ? "#3b82f6" : "#2563eb";
         ctx.fillStyle = isDark ? "#1e1e24" : "#f1f5f9";
         ctx.beginPath();
         ctx.roundRect(padX - 4, padY, gridW + 8, gridH, 6);
         ctx.fill();
         ctx.strokeStyle = nutColor;
-        ctx.lineWidth = 6;
+        ctx.lineWidth = isNotesMode ? 4 : 6;
         ctx.beginPath();
         ctx.moveTo(padX - 4, padY);
         ctx.lineTo(padX + gridW + 4, padY);
@@ -487,35 +642,70 @@ export class DiagramRenderer {
             const x = padX + s * stringSpacing;
             ctx.fillText(stringNames[s], x, padY + gridH + 16);
         }
-        for (let s = 0; s < numStrings; s++) {
-            const fret = frets[s];
-            const x = padX + s * stringSpacing;
-            const openMidi = tuningStrings[s] || 28;
-            if (fret === 0) {
-                ctx.strokeStyle = isDark ? "#10b981" : "#059669";
-                ctx.lineWidth = 2;
-                ctx.beginPath();
-                ctx.arc(x, padY - 16, 6, 0, Math.PI * 2);
-                ctx.stroke();
-                this.clickTargets.push({ x, y: padY - 16, radius: 10, midi: openMidi, instrument: "bass" });
+        const chordPitchClasses = new Set(chord.notes.map(n => noteNameToMidi(n) % 12));
+        if (isNotesMode) {
+            for (let s = 0; s < numStrings; s++) {
+                const x = padX + s * stringSpacing;
+                const openMidi = tuningStrings[s] || 28;
+                for (let f = 0; f <= numFrets; f++) {
+                    const midi = openMidi + f;
+                    if (chordPitchClasses.has(midi % 12)) {
+                        const y = f === 0 ? padY - 14 : padY + (f - 0.5) * fretSpacing;
+                        const info = this.getNoteLabelAndColor(midi, chord, toggles, isDark);
+                        ctx.fillStyle = info.bg;
+                        ctx.beginPath();
+                        ctx.arc(x, y, f === 0 ? 8 : 7.5, 0, Math.PI * 2);
+                        ctx.fill();
+                        if (info.label) {
+                            ctx.fillStyle = info.text;
+                            ctx.font = "bold 8px system-ui, sans-serif";
+                            ctx.textAlign = "center";
+                            ctx.fillText(info.label, x, y + 2.8);
+                        }
+                        this.clickTargets.push({ x, y, radius: 10, midi, instrument: "bass" });
+                    }
+                }
             }
-            else if (fret > 0 && fret <= numFrets) {
-                const y = padY + (fret - 0.5) * fretSpacing;
-                const midi = openMidi + fret;
-                const noteName = midiToNoteName(midi).replace(/\d+/, "");
-                const isRoot = (midi % 12) === (noteNameToMidi(chord.root + "4") % 12);
-                ctx.fillStyle = isRoot ? rootColor : fifthColor;
-                ctx.beginPath();
-                ctx.arc(x, y, 12, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.fillStyle = "#ffffff";
-                ctx.font = "bold 10px system-ui, sans-serif";
-                ctx.textAlign = "center";
-                ctx.fillText(noteName, x, y + 3.5);
-                this.clickTargets.push({ x, y, radius: 14, midi, instrument: "bass" });
+        }
+        else {
+            for (let s = 0; s < numStrings; s++) {
+                const fret = frets[s];
+                const x = padX + s * stringSpacing;
+                const openMidi = tuningStrings[s] || 28;
+                if (fret === 0) {
+                    const info = this.getNoteLabelAndColor(openMidi, chord, toggles, isDark);
+                    ctx.fillStyle = info.bg;
+                    ctx.beginPath();
+                    ctx.arc(x, padY - 16, 9, 0, Math.PI * 2);
+                    ctx.fill();
+                    if (info.label) {
+                        ctx.fillStyle = info.text;
+                        ctx.font = "bold 9px system-ui, sans-serif";
+                        ctx.textAlign = "center";
+                        ctx.fillText(info.label, x, padY - 13);
+                    }
+                    this.clickTargets.push({ x, y: padY - 16, radius: 11, midi: openMidi, instrument: "bass" });
+                }
+                else if (fret > 0 && fret <= numFrets) {
+                    const y = padY + (fret - 0.5) * fretSpacing;
+                    const midi = openMidi + fret;
+                    const info = this.getNoteLabelAndColor(midi, chord, toggles, isDark);
+                    ctx.fillStyle = info.bg;
+                    ctx.beginPath();
+                    ctx.arc(x, y, 12, 0, Math.PI * 2);
+                    ctx.fill();
+                    if (info.label) {
+                        ctx.fillStyle = info.text;
+                        ctx.font = "bold 10px system-ui, sans-serif";
+                        ctx.textAlign = "center";
+                        ctx.fillText(info.label, x, y + 3.5);
+                    }
+                    this.clickTargets.push({ x, y, radius: 14, midi, instrument: "bass" });
+                }
             }
         }
     }
+    // --- Harmonica Diagram ---
     renderHarmonica(ctx, w, h, chord, toggles, isDark = true) {
         const numHoles = 10;
         const harmonica = chord.instruments.harmonica || { holes: ["4", "5", "6"], blowDraw: ["blow", "blow", "blow"] };

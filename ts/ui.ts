@@ -671,6 +671,7 @@ export class UIManager {
   private bindKeyboardShortcuts(): void {
     window.addEventListener("keydown", (e) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement) return;
+      if (e.repeat) return; // Prevent infinite re-triggering when key is held down
 
       // Space = Toggle Play / Pause
       if (e.code === "Space") {
@@ -719,7 +720,7 @@ export class UIManager {
           this.state.selectedChord = chordId;
           progression.setActiveIndex(index);
 
-          const direction = e.shiftKey ? "up" : "down";
+          const direction = e.shiftKey ? "down_up" : "down";
           this.playChordById(chordId, direction);
         }
       }
