@@ -1,4 +1,4 @@
-import { getCapoSoundingRoot, getScaleDegree, GENERATOR_STYLES } from "./chord.js";
+import { getCapoSoundingRoot, getScaleDegree, GENERATOR_STYLES, getInversionNotes, noteNameToMidi } from "./chord.js";
 import { audio, SOUND_PRESETS } from "./audio.js";
 import { diagrams } from "./diagrams.js";
 import { progression } from "./progression.js";
@@ -1593,8 +1593,14 @@ export class UIManager {
     }
     setDisplayView(view) {
         this.state.displayView = view;
-        this.viewChordBtnEl?.classList.toggle("active", view === "chord");
-        this.viewNotesBtnEl?.classList.toggle("active", view === "notes");
+        if (this.viewChordBtnEl) {
+            this.viewChordBtnEl.classList.toggle("active", view === "chord");
+            this.viewChordBtnEl.setAttribute("aria-selected", view === "chord" ? "true" : "false");
+        }
+        if (this.viewNotesBtnEl) {
+            this.viewNotesBtnEl.classList.toggle("active", view === "notes");
+            this.viewNotesBtnEl.setAttribute("aria-selected", view === "notes" ? "true" : "false");
+        }
         this.renderActiveChord();
     }
     selectChord(chordId, updateActiveProgressionSlot = true) {
@@ -1641,7 +1647,13 @@ export class UIManager {
             capoInfo = ` • Sounds as ${soundingRoot}${chord.symbol.replace(chord.root, "")} (Capo ${this.state.capo})`;
         }
         this.chordSubtitleEl.textContent = `${chord.name}${capoInfo}`;
-        this.chordNotesEl.textContent = `Notes: ${chord.notes.join(" - ")} | Scale: ${chord.scale}`;
+        const currentNotes = (this.state.selectedInversionIndex > 0 && chord.inversions && chord.inversions[this.state.selectedInversionIndex])
+            ? getInversionNotes(chord, this.state.selectedInversionIndex)
+            : chord.notes;
+        const invLabel = (this.state.selectedInversionIndex > 0 && chord.inversions && chord.inversions[this.state.selectedInversionIndex])
+            ? ` • ${chord.inversions[this.state.selectedInversionIndex].label}`
+            : "";
+        this.chordNotesEl.textContent = `Notes: ${currentNotes.join(" - ")} | Scale: ${chord.scale}${invLabel}`;
         // Update Progression Generator target badge & Modal Target
         if (this.generatorTargetEl) {
             this.generatorTargetEl.textContent = `${chord.name} (${chord.symbol})`;
@@ -1966,7 +1978,12 @@ export class UIManager {
         let notes = [];
         switch (this.state.activeInstrument) {
             case "piano":
-                notes = chord.instruments.piano?.keys || [60, 64, 67];
+                if (this.state.selectedInversionIndex > 0 && chord.inversions && chord.inversions[this.state.selectedInversionIndex]) {
+                    notes = getInversionNotes(chord, this.state.selectedInversionIndex).map(n => noteNameToMidi(n));
+                }
+                else {
+                    notes = chord.instruments.piano?.keys || [60, 64, 67];
+                }
                 break;
             case "guitar": {
                 const frets = chord.instruments.guitar?.frets || [-1, 0, 2, 2, 2, 0];

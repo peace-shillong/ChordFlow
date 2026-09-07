@@ -373,11 +373,20 @@
                 <select id="chord-voicing-select" class="custom-select"
                   style="font-size: 12px; padding: 5px 8px;"></select>
               </div>
+            </div>
 
-              <div class="view-mode-toggle" role="group" aria-label="Display View Mode">
-                <button id="btn-view-chord" class="view-toggle-btn active" data-view="chord">Chord</button>
-                <button id="btn-view-notes" class="view-toggle-btn" data-view="notes">Notes</button>
-              </div>
+            <!-- Segmented View Mode Tabs: Chord Diagram vs Notes Map -->
+            <div class="diagram-view-tabs" role="tablist" aria-label="Diagram Display Mode">
+              <button id="btn-view-chord" class="diagram-tab-btn active" data-view="chord" role="tab"
+                aria-selected="true" title="Show Chord Diagram with fingerings and voicings">
+                <span class="tab-icon">🎯</span>
+                <span class="tab-label">Chord</span>
+              </button>
+              <button id="btn-view-notes" class="diagram-tab-btn" data-view="notes" role="tab" aria-selected="false"
+                title="Show Notes View across fretboard / keyboard">
+                <span class="tab-icon">🎼</span>
+                <span class="tab-label">Notes</span>
+              </button>
             </div>
 
             <!-- Inversions (Advanced Mode) -->
@@ -873,7 +882,8 @@
       <div class="modal-footer about-modal-footer">
         <div class="about-footer-text-group">
           <span class="about-footer-tagline">Crafted for songwriters, performers, and students worldwide 🎶</span>
-          <span class="about-footer-privacy">This is a free and open source app. This site uses Google Analytics for
+          <span class="about-footer-privacy">This is a free and open source app. Best viewed on Desktop and Tablets.
+            This site uses Google Analytics for
             anonymous usage statistics.</span>
         </div>
         <button type="button" class="btn btn-primary btn-close-about-footer" id="btn-close-about-footer">Got It</button>

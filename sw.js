@@ -12,6 +12,7 @@ const PRECACHE_ASSETS = [
   './css/main.css',
   './dist/main.js',
   './dist/audio.js',
+  './dist/analytics.js',
   './dist/chord.js',
   './dist/db.js',
   './dist/diagrams.js',

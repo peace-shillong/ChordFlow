@@ -379,11 +379,13 @@ export class DiagramRenderer {
         this.renderGuitar(ctx, w, h, chord, capo, tuningStrings, voicing, viewMode, toggles, isDark);
     }
     // --- Piano Diagram ---
-    renderPiano(ctx, w, h, chord, inversionIndex = 0, voicing, viewMode = "chord", toggles, isDark = true) {
+    renderPiano(ctx, w, _h, chord, inversionIndex = 0, voicing, viewMode = "chord", toggles, isDark = true) {
         const isNotesMode = viewMode === "notes";
         const chordPitchClasses = new Set(chord.notes.map(n => noteNameToMidi(n) % 12));
         const activeMidiSet = new Set();
-        const invNotes = voicing?.piano || getInversionNotes(chord, inversionIndex).map(n => noteNameToMidi(n));
+        const invNotes = (inversionIndex > 0 || !voicing?.piano)
+            ? getInversionNotes(chord, inversionIndex).map(n => noteNameToMidi(n))
+            : (voicing?.piano || getInversionNotes(chord, 0).map(n => noteNameToMidi(n)));
         invNotes.forEach(m => activeMidiSet.add(m));
         const activeList = Array.from(activeMidiSet);
         const minMidi = activeList.length > 0 ? Math.min(...activeList) : 60;
@@ -398,10 +400,16 @@ export class DiagramRenderer {
         const padX = 20;
         const keyboardW = w - padX * 2;
         const whiteKeyW = keyboardW / numWhiteKeys;
-        const whiteKeyH = Math.min(115, Math.max(88, Math.round(whiteKeyW * 4.6)));
+        const whiteKeyH = Math.min(130, Math.max(95, Math.round(whiteKeyW * 4.8)));
         const blackKeyW = Math.round(whiteKeyW * 0.62);
         const blackKeyH = Math.round(whiteKeyH * 0.63);
-        const padY = Math.max(26, Math.round((h - whiteKeyH) / 2));
+        // Top Visible Octave Title Banner (placed before the keys)
+        const bannerW = Math.min(260, keyboardW - 4);
+        const bannerH = 22;
+        const bannerX = (w - bannerW) / 2;
+        const bannerY = 10;
+        // Keys and fallboard positioned with clear separation below the top banner
+        const padY = bannerY + bannerH + 18; // 50px
         // Piano fallboard & red felt strip
         ctx.fillStyle = isDark ? "#1e293b" : "#334155";
         ctx.beginPath();
@@ -436,25 +444,22 @@ export class DiagramRenderer {
         const cOctaves = cKeys.map(k => Math.floor(k.midi / 12) - 1);
         const allOctaves = Array.from(new Set(whiteKeys.map(k => Math.floor(k.midi / 12) - 1))).sort((a, b) => a - b);
         const primaryOctave = cOctaves[0] !== undefined ? cOctaves[0] : allOctaves[0] || 4;
-        // Top Visible Octave Title Banner
         const octaveText = cOctaves.length > 0
             ? `Octave ${cOctaves.join(" & ")} (C${cOctaves.join(", C")})`
             : `Octave ${primaryOctave}`;
-        const bannerW = Math.min(240, keyboardW - 10);
-        const bannerH = 20;
-        const bannerX = (w - bannerW) / 2;
-        const bannerY = Math.max(4, padY - 24);
         ctx.fillStyle = isDark ? "rgba(99, 102, 241, 0.18)" : "rgba(79, 70, 229, 0.1)";
         ctx.strokeStyle = isDark ? "rgba(99, 102, 241, 0.45)" : "rgba(79, 70, 229, 0.3)";
         ctx.lineWidth = 1;
         ctx.beginPath();
-        ctx.roundRect(bannerX, bannerY, bannerW, bannerH, 10);
+        ctx.roundRect(bannerX, bannerY, bannerW, bannerH, 11);
         ctx.fill();
         ctx.stroke();
         ctx.fillStyle = isDark ? "#818cf8" : "#4f46e5";
-        ctx.font = "bold 11px system-ui, sans-serif";
+        ctx.font = "bold 11px system-ui, -apple-system, sans-serif";
         ctx.textAlign = "center";
-        ctx.fillText(`🎹 Visible: ${octaveText}`, w / 2, bannerY + 14);
+        ctx.textBaseline = "middle";
+        ctx.fillText(`🎹 Visible: ${octaveText}`, w / 2, bannerY + bannerH / 2);
+        ctx.textBaseline = "alphabetic";
         // Draw White Keys
         for (const k of whiteKeys) {
             const isKeyActive = isNotesMode ? chordPitchClasses.has(k.midi % 12) : activeMidiSet.has(k.midi);
@@ -487,7 +492,7 @@ export class DiagramRenderer {
         for (const k of blackKeys) {
             const isKeyActive = isNotesMode ? chordPitchClasses.has(k.midi % 12) : activeMidiSet.has(k.midi);
             const info = isKeyActive ? this.getNoteLabelAndColor(k.midi, chord, toggles, isDark) : null;
-            ctx.fillStyle = isKeyActive && info ? (info.isRoot ? info.bg : (isDark ? "#ec4899" : "#db2777")) : isDark ? "#0f172a" : "#1e293b";
+            ctx.fillStyle = isKeyActive && info ? info.bg : isDark ? "#0f172a" : "#1e293b";
             ctx.strokeStyle = isDark ? "#020617" : "#0f172a";
             ctx.lineWidth = 1;
             ctx.beginPath();
