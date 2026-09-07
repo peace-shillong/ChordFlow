@@ -1,6 +1,7 @@
 import { ChordDatabase } from "./chord.js";
 import { progression } from "./progression.js";
 import { UIManager } from "./ui.js";
+import { trackPageView } from "./analytics.js";
 async function bootstrap() {
     const loadingOverlay = document.getElementById("loading-overlay");
     try {
@@ -12,6 +13,8 @@ async function bootstrap() {
             (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
         const savedMode = localStorage.getItem("chordflow-mode") || "clean";
         progression.setMaxChords(savedMode === "clean" ? 8 : 16);
+        const savedTranspose = parseInt(localStorage.getItem("chordflow-transpose") || "0", 10);
+        const initialTranspose = isNaN(savedTranspose) ? 0 : Math.max(-12, Math.min(12, savedTranspose));
         const initialState = {
             mode: savedMode,
             activeInstrument: "guitar",
@@ -38,10 +41,13 @@ async function bootstrap() {
                 showCircle: true,
                 showInversions: true
             },
-            theme: savedTheme
+            theme: savedTheme,
+            transposeOffset: initialTranspose
         };
         const ui = new UIManager(db, initialState);
         ui.init();
+        // Track SPA root view
+        trackPageView("/ChordFlow/");
         // Hide loading screen
         if (loadingOverlay) {
             loadingOverlay.classList.add("hidden");

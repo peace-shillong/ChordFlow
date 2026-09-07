@@ -397,6 +397,32 @@ export class ChordDatabase {
         }
         return resultChordIds.slice(0, 7);
     }
+    /**
+     * Transpose a single chord ID by a semitone offset (-12 to +12)
+     */
+    transposeChord(chordId, offset) {
+        const chord = this.getChordById(chordId);
+        if (!chord)
+            return null;
+        const rootNorm = ENHARMONIC_EQUIVALENTS[chord.root] || chord.root;
+        let rootIndex = NOTE_NAMES.indexOf(rootNorm);
+        if (rootIndex === -1)
+            rootIndex = 0;
+        const newRootIndex = ((rootIndex + offset) % 12 + 12) % 12;
+        const newRoot = NOTE_NAMES[newRootIndex];
+        const targetId = `${newRoot}${chord.quality}`;
+        if (this.chordsMap.has(targetId)) {
+            return targetId;
+        }
+        const found = this.chords.find(c => c.root === newRoot && c.quality === chord.quality);
+        return found ? found.id : null;
+    }
+    /**
+     * Transpose an array of chord IDs by a semitone offset (-12 to +12)
+     */
+    transposeProgression(chordIds, offset) {
+        return chordIds.map(id => this.transposeChord(id, offset) || id);
+    }
 }
 /** Convert a MIDI note number to Frequency in Hertz */
 export function midiToFrequency(midi) {

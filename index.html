@@ -28,6 +28,18 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="ChordFlow">
 
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-GTZPHH83C1"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+    gtag('config', 'G-GTZPHH83C1', {
+      'page_path': '/ChordFlow/',
+      anonymize_ip: true
+    });
+  </script>
+
   <!-- jsPDF CDN for single-script printable PDF export -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
@@ -169,10 +181,14 @@
               <div class="generator-controls">
                 <div class="generator-style-picker-wrapper">
                   <span class="control-label" style="font-size: 11px;">Style / Formula:</span>
-                  <button type="button" id="btn-open-generator-styles" class="generator-style-trigger-btn" aria-haspopup="dialog" aria-expanded="false" title="Click to browse and select progression style / formula">
+                  <button type="button" id="btn-open-generator-styles" class="generator-style-trigger-btn"
+                    aria-haspopup="dialog" aria-expanded="false"
+                    title="Click to browse and select progression style / formula">
                     <div class="generator-style-trigger-content">
-                      <span id="generator-selected-style-name" class="generator-style-trigger-title">Royal Road / 王道進行 (IV-V-iii-vi)</span>
-                      <span id="generator-selected-style-desc" class="generator-style-trigger-subtitle">Japanese &amp; City Pop • Pop Rock</span>
+                      <span id="generator-selected-style-name" class="generator-style-trigger-title">Royal Road / 王道進行
+                        (IV-V-iii-vi)</span>
+                      <span id="generator-selected-style-desc" class="generator-style-trigger-subtitle">Japanese &amp;
+                        City Pop • Pop Rock</span>
                     </div>
                     <span class="generator-style-trigger-badge">Browse ▾</span>
                   </button>
@@ -269,6 +285,21 @@
                   ⏱
                 </button>
                 <div id="metronome-pulse-indicator" class="metro-indicator" title="Beat Metronome Pulse"></div>
+              </div>
+
+              <!-- Transpose Controls -->
+              <div class="transpose-control-group" aria-label="Progression Transpose">
+                <span class="control-label transpose-label-text">Key:</span>
+                <div class="transpose-pill">
+                  <button id="btn-transpose-down" class="transpose-btn" title="Transpose Down 1 Semitone (-)"
+                    aria-label="Transpose Down">−</button>
+                  <span id="transpose-value-display" class="transpose-value"
+                    title="Current Semitone Transposition Offset">0</span>
+                  <button id="btn-transpose-up" class="transpose-btn" title="Transpose Up 1 Semitone (+)"
+                    aria-label="Transpose Up">+</button>
+                </div>
+                <button id="btn-transpose-reset" class="transpose-reset-btn" title="Reset Transposition to 0 (↺)"
+                  aria-label="Reset Transposition">↺</button>
               </div>
 
               <!-- Tempo Controls -->
@@ -465,7 +496,8 @@
               <span class="pwa-install-icon">📱</span>
               <div class="pwa-install-text-group">
                 <h5 class="pwa-install-title">Install ChordFlow App</h5>
-                <p class="pwa-install-desc" id="pwa-install-status-text">Install as a standalone PWA for offline practice and zero latency.</p>
+                <p class="pwa-install-desc" id="pwa-install-status-text">Install as a standalone PWA for offline
+                  practice and zero latency.</p>
               </div>
             </div>
             <button type="button" class="btn pwa-install-btn" id="btn-install-pwa">
@@ -591,17 +623,20 @@
       <div class="modal-header">
         <div class="modal-header-left">
           <h3 id="generator-styles-modal-title" class="modal-title">✨ Progression Styles & Formulas</h3>
-          <p class="modal-subtitle">Select a style formula starting on <span id="generator-modal-target-chord" class="generator-modal-root-highlight">C Major (C)</span></p>
+          <p class="modal-subtitle">Select a style formula starting on <span id="generator-modal-target-chord"
+              class="generator-modal-root-highlight">C Major (C)</span></p>
         </div>
         <button class="modal-close-btn" id="btn-close-generator-styles" title="Close">✕</button>
       </div>
       <div class="modal-body generator-styles-modal-body">
         <!-- Category Filter Pills & Search Bar -->
         <div class="generator-modal-toolbar">
-          <div class="generator-modal-categories" id="generator-category-filter-pills" role="tablist" aria-label="Style Categories"></div>
+          <div class="generator-modal-categories" id="generator-category-filter-pills" role="tablist"
+            aria-label="Style Categories"></div>
           <div class="generator-modal-search-wrapper">
             <span class="generator-search-icon">🔍</span>
-            <input type="text" id="generator-style-search" class="search-input generator-search-input" placeholder="Search styles & formulas (e.g. Royal Road, ii-V-I, Blues)..." aria-label="Search Styles">
+            <input type="text" id="generator-style-search" class="search-input generator-search-input"
+              placeholder="Search styles & formulas (e.g. Royal Road, ii-V-I, Blues)..." aria-label="Search Styles">
           </div>
         </div>
 
@@ -613,13 +648,16 @@
         <div class="generator-modal-selection-info">
           <span class="generator-modal-selection-label">Selected Style:</span>
           <div class="generator-modal-selection-details">
-            <span id="generator-modal-selected-name" class="generator-modal-selected-title">Royal Road / 王道進行 (IV-V-iii-vi)</span>
-            <span id="generator-modal-selected-meta" class="generator-modal-selected-meta">128 BPM • Pop / Rock Drive</span>
+            <span id="generator-modal-selected-name" class="generator-modal-selected-title">Royal Road / 王道進行
+              (IV-V-iii-vi)</span>
+            <span id="generator-modal-selected-meta" class="generator-modal-selected-meta">128 BPM • Pop / Rock
+              Drive</span>
           </div>
         </div>
         <div class="generator-modal-footer-actions">
           <button type="button" class="generator-modal-cancel-btn" id="btn-cancel-generator-styles">Cancel</button>
-          <button type="button" class="generator-action-btn generator-modal-generate-btn" id="btn-modal-generate-progression" title="Generate Progression with Selected Style">
+          <button type="button" class="generator-action-btn generator-modal-generate-btn"
+            id="btn-modal-generate-progression" title="Generate Progression with Selected Style">
             <span>⚡</span>
             <span>Generate Progression</span>
           </button>
@@ -629,7 +667,8 @@
   </div>
 
   <!-- 6. About App Modal -->
-  <div id="about-modal" class="modal-backdrop" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="about-modal-title">
+  <div id="about-modal" class="modal-backdrop" style="display: none;" role="dialog" aria-modal="true"
+    aria-labelledby="about-modal-title">
     <div class="glass-panel modal-card modal-card-large about-modal-card">
       <div class="modal-header">
         <div class="modal-header-left">
@@ -648,7 +687,11 @@
         <div class="about-section">
           <h4 class="about-section-title">🌟 Overview</h4>
           <p class="about-description">
-            <strong>ChordFlow</strong> is a professional, high-performance Web Audio Single Page Application designed for musicians, songwriters, producers, and students. It enables instant chord exploration across 7 acoustic & electric instruments, customizable voicing diagrams, intelligent chord progression building with 16 world-class formulas, custom 16-step strumming pattern sequencing, a real-time chromatic pitch tuner, and interactive music theory visualization.
+            <strong>ChordFlow</strong> is a professional, high-performance Web Audio Single Page Application designed
+            for musicians, songwriters, producers, and students. It enables instant chord exploration across 7 acoustic
+            & electric instruments, customizable voicing diagrams, intelligent chord progression building with 16
+            world-class formulas, custom 16-step strumming pattern sequencing, a real-time chromatic pitch tuner, and
+            interactive music theory visualization.
           </p>
         </div>
 
@@ -660,7 +703,8 @@
               <div class="about-feature-icon">🎸</div>
               <div class="about-feature-info">
                 <h5>7 Realistic Instruments</h5>
-                <p>Guitar (Standard EADGBE), Piano (88-key mapped), Ukulele (GCEA), Guitalele (ADGCEA), Violin (GDAE), Bass (EADG), and 10-Hole Diatonic Harmonica in C.</p>
+                <p>Guitar (Standard EADGBE), Piano (88-key mapped), Ukulele (GCEA), Guitalele (ADGCEA), Violin (GDAE),
+                  Bass (EADG), and 10-Hole Diatonic Harmonica in C.</p>
               </div>
             </div>
 
@@ -668,7 +712,8 @@
               <div class="about-feature-icon">🎼</div>
               <div class="about-feature-info">
                 <h5>144 Interactive Chords & Voicings</h5>
-                <p>Major, Minor, 7th, Maj7, m7, Diminished, Augmented, Sus2, Sus4, 6th, m6, and Add9 across all 12 chromatic root notes with multiple voicing variations.</p>
+                <p>Major, Minor, 7th, Maj7, m7, Diminished, Augmented, Sus2, Sus4, 6th, m6, and Add9 across all 12
+                  chromatic root notes with multiple voicing variations.</p>
               </div>
             </div>
 
@@ -676,7 +721,9 @@
               <div class="about-feature-icon">⚡</div>
               <div class="about-feature-info">
                 <h5>Progression Formulas & Tempo Match</h5>
-                <p>16 auto-generation formulas including Japanese City Pop / Royal Road (王道進行), Just The Two of Us (丸サ進行), J-Rock Drive, Circle of Fifths cycles, Neo-Soul, Blues, and Flamenco with style-matched tempo and strum patterns.</p>
+                <p>16 auto-generation formulas including Japanese City Pop / Royal Road (王道進行), Just The Two of Us
+                  (丸サ進行), J-Rock Drive, Circle of Fifths cycles, Neo-Soul, Blues, and Flamenco with style-matched tempo
+                  and strum patterns.</p>
               </div>
             </div>
 
@@ -684,7 +731,8 @@
               <div class="about-feature-icon">🥁</div>
               <div class="about-feature-info">
                 <h5>16-Step Strumming Sequencer</h5>
-                <p>Interactive 16-subdivision rhythmic grid editor with down-strums (↓), up-strums (↑), mutes (x), and accents, accompanied by a real-time synchronized playback ticker.</p>
+                <p>Interactive 16-subdivision rhythmic grid editor with down-strums (↓), up-strums (↑), mutes (x), and
+                  accents, accompanied by a real-time synchronized playback ticker.</p>
               </div>
             </div>
 
@@ -692,7 +740,8 @@
               <div class="about-feature-icon">🎯</div>
               <div class="about-feature-info">
                 <h5>Real-Time Chromatic Tuner</h5>
-                <p>Microphone pitch-detection engine with high-precision YIN / autocorrelation algorithm, dynamic cent deviation meter, string selection buttons, and automatic 3-strike string advance.</p>
+                <p>Microphone pitch-detection engine with high-precision YIN / autocorrelation algorithm, dynamic cent
+                  deviation meter, string selection buttons, and automatic 3-strike string advance.</p>
               </div>
             </div>
 
@@ -700,7 +749,8 @@
               <div class="about-feature-icon">🎡</div>
               <div class="about-feature-info">
                 <h5>Circle of Fifths & Modal Theory</h5>
-                <p>Interactive 12-key Circle of Fifths with diatonic chord highlighting (I, ii, iii, IV, V, vi, vii°), borrowed modal chords, Roman numeral analysis, and scale degree formula viewer.</p>
+                <p>Interactive 12-key Circle of Fifths with diatonic chord highlighting (I, ii, iii, IV, V, vi, vii°),
+                  borrowed modal chords, Roman numeral analysis, and scale degree formula viewer.</p>
               </div>
             </div>
 
@@ -708,7 +758,9 @@
               <div class="about-feature-icon">🎛️</div>
               <div class="about-feature-info">
                 <h5>Dual Modes & Audio Synthesis</h5>
-                <p>Seamlessly toggle between <em>Clean Mode</em> (streamlined 8-chord workflow) and <em>Advanced Mode</em> (16-chord capacity, voicings, inversion filters, custom Low-Pass/High-Pass/Decay sound design sliders).</p>
+                <p>Seamlessly toggle between <em>Clean Mode</em> (streamlined 8-chord workflow) and <em>Advanced
+                    Mode</em> (16-chord capacity, voicings, inversion filters, custom Low-Pass/High-Pass/Decay sound
+                  design sliders).</p>
               </div>
             </div>
 
@@ -716,7 +768,8 @@
               <div class="about-feature-icon">📄</div>
               <div class="about-feature-info">
                 <h5>Export & Offline PWA</h5>
-                <p>Export progressions to Printable PDF Chord Charts (jsPDF), MIDI files, JSON, or copyable text. Works 100% offline with zero network latency.</p>
+                <p>Export progressions to Printable PDF Chord Charts (jsPDF), MIDI files, JSON, or copyable text. Works
+                  100% offline with zero network latency.</p>
               </div>
             </div>
           </div>
@@ -761,6 +814,11 @@
                   <td>Navigate active chord (or scroll Piano keyboard ±1 octave)</td>
                 </tr>
                 <tr>
+                  <td><kbd>+</kbd> / <kbd>-</kbd></td>
+                  <td><strong>Transpose</strong></td>
+                  <td>Transpose the entire chord progression up or down by 1 semitone</td>
+                </tr>
+                <tr>
                   <td><kbd>?</kbd> or <kbd>A</kbd></td>
                   <td><strong>About & Shortcuts</strong></td>
                   <td>Open this About ChordFlow & Shortcuts documentation modal</td>
@@ -795,7 +853,8 @@
           <div class="about-meta-grid">
             <div>
               <span class="about-meta-label">Architecture</span>
-              <p class="about-meta-value">Pure TypeScript (ES2022), Web Audio API, HTML5 Canvas 2D, Modern Vanilla CSS3</p>
+              <p class="about-meta-value">Pure TypeScript (ES2022), Web Audio API, HTML5 Canvas 2D, Modern Vanilla CSS3
+              </p>
             </div>
             <div>
               <span class="about-meta-label">Offline Engine</span>
@@ -810,7 +869,11 @@
       </div>
 
       <div class="modal-footer about-modal-footer">
-        <span class="about-footer-tagline">Crafted for songwriters, performers, and students worldwide 🎶</span>
+        <div class="about-footer-text-group">
+          <span class="about-footer-tagline">Crafted for songwriters, performers, and students worldwide 🎶</span>
+          <span class="about-footer-privacy">This is a free and open source app. This site uses Google Analytics for
+            anonymous usage statistics.</span>
+        </div>
         <button type="button" class="btn btn-primary btn-close-about-footer" id="btn-close-about-footer">Got It</button>
       </div>
     </div>

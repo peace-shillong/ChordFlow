@@ -2,6 +2,7 @@ import { AppState } from "./types.js";
 import { ChordDatabase } from "./chord.js";
 import { progression } from "./progression.js";
 import { UIManager } from "./ui.js";
+import { trackPageView } from "./analytics.js";
 
 async function bootstrap(): Promise<void> {
   const loadingOverlay = document.getElementById("loading-overlay");
@@ -19,6 +20,9 @@ async function bootstrap(): Promise<void> {
 
     const savedMode = (localStorage.getItem("chordflow-mode") as "clean" | "advanced") || "clean";
     progression.setMaxChords(savedMode === "clean" ? 8 : 16);
+
+    const savedTranspose = parseInt(localStorage.getItem("chordflow-transpose") || "0", 10);
+    const initialTranspose = isNaN(savedTranspose) ? 0 : Math.max(-12, Math.min(12, savedTranspose));
 
     const initialState: AppState = {
       mode: savedMode,
@@ -46,11 +50,15 @@ async function bootstrap(): Promise<void> {
         showCircle: true,
         showInversions: true
       },
-      theme: savedTheme
+      theme: savedTheme,
+      transposeOffset: initialTranspose
     };
 
     const ui = new UIManager(db, initialState);
     ui.init();
+
+    // Track SPA root view
+    trackPageView("/ChordFlow/");
 
     // Hide loading screen
     if (loadingOverlay) {

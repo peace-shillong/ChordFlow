@@ -6,6 +6,7 @@ import { progression } from "./progression.js";
 import { circleOfFifths } from "./circle.js";
 import { exporter } from "./export.js";
 import { tuner } from "./tuner.js";
+import { trackPageView, trackEvent } from "./analytics.js";
 
 export class UIManager {
   private db: ChordDatabase;
@@ -43,6 +44,12 @@ export class UIManager {
   private volumeSliderEl!: HTMLInputElement;
   private volumeValueEl!: HTMLElement;
   private volumeIconBtnEl!: HTMLElement;
+
+  // Transpose Controls
+  private btnTransposeDownEl!: HTMLButtonElement;
+  private btnTransposeUpEl!: HTMLButtonElement;
+  private btnTransposeResetEl!: HTMLButtonElement;
+  private transposeValueDisplayEl!: HTMLElement;
 
   // Strum Visualizers & Editor Elements
   private strumTickerEl!: HTMLElement;
@@ -133,6 +140,7 @@ export class UIManager {
     progression.setMaxChords(this.state.mode === "clean" ? 8 : 16);
     this.applyMode(this.state.mode);
     this.updateGeneratorStyleDisplay();
+    this.updateTransposeDisplay();
     this.updateAudioSliders();
     this.renderActiveChord();
     this.renderProgressionCards();
@@ -214,6 +222,12 @@ export class UIManager {
     this.volumeSliderEl = document.getElementById("volume-slider") as HTMLInputElement;
     this.volumeValueEl = document.getElementById("volume-value-display")!;
     this.volumeIconBtnEl = document.getElementById("volume-icon-btn")!;
+
+    // Transpose Controls
+    this.btnTransposeDownEl = document.getElementById("btn-transpose-down") as HTMLButtonElement;
+    this.btnTransposeUpEl = document.getElementById("btn-transpose-up") as HTMLButtonElement;
+    this.btnTransposeResetEl = document.getElementById("btn-transpose-reset") as HTMLButtonElement;
+    this.transposeValueDisplayEl = document.getElementById("transpose-value-display")!;
 
     // Strum Visualizers & Editor Elements
     this.strumTickerEl = document.getElementById("strum-visualizer-ticker")!;
@@ -404,6 +418,7 @@ export class UIManager {
     document.getElementById("btn-save-json")?.addEventListener("click", () => {
       exporter.exportJSON(this.state, progression.getTitle());
       this.showToast("Saved progression as JSON! 💾");
+      trackEvent("export", { format: "json", chord_count: this.state.progression.length.toString() });
     });
 
     // Save as PDF
@@ -414,6 +429,7 @@ export class UIManager {
       const strum = this.db.getStrumPattern(this.state.strumPattern || "");
       exporter.exportPDF(this.state, chordObjs, strum, progression.getTitle());
       this.showToast("Exporting printable PDF... 📄");
+      trackEvent("export", { format: "pdf", chord_count: this.state.progression.length.toString() });
     });
 
     // Save as PNG
@@ -424,6 +440,7 @@ export class UIManager {
       const strum = this.db.getStrumPattern(this.state.strumPattern || "");
       exporter.exportPNG(this.state, chordObjs, strum, progression.getTitle());
       this.showToast("Exporting progression image... 🖼️");
+      trackEvent("export", { format: "png", chord_count: this.state.progression.length.toString() });
     });
 
     // Import Button & Hidden File Picker
@@ -447,6 +464,7 @@ export class UIManager {
             this.capoValueEl.textContent = imported.capo === 0 ? "None (0)" : `Fret ${imported.capo}`;
           }
           this.showToast("Progression imported successfully! 📂");
+          trackEvent("import", { format: "json", chord_count: imported.progression.length.toString() });
         } catch (err) {
           alert(`Import failed: ${(err as Error).message}`);
         }
@@ -461,6 +479,14 @@ export class UIManager {
 
     // 7. Progression Playback Transport Controls
     this.playBtnEl?.addEventListener("click", () => {
+      if (!this.state.isPlaying) {
+        trackEvent("play_progression", {
+          chord_count: progression.getChords().length.toString(),
+          tempo: progression.getTempo().toString(),
+          instrument: this.state.activeInstrument,
+          strum_pattern: this.state.strumPattern || "basic"
+        });
+      }
       progression.togglePlay();
     });
 
@@ -476,6 +502,19 @@ export class UIManager {
     this.metronomeBtnEl?.addEventListener("click", () => {
       const isMetro = progression.toggleMetronome();
       this.metronomeBtnEl.classList.toggle("active", isMetro);
+    });
+
+    // Transpose Buttons
+    this.btnTransposeDownEl?.addEventListener("click", () => {
+      this.transposeProgressionBy(-1);
+    });
+
+    this.btnTransposeUpEl?.addEventListener("click", () => {
+      this.transposeProgressionBy(1);
+    });
+
+    this.btnTransposeResetEl?.addEventListener("click", () => {
+      this.resetTranspose();
     });
 
     // Tempo Slider
@@ -779,6 +818,7 @@ export class UIManager {
       if (this.settingsModalEl) this.settingsModalEl.style.display = "flex";
       this.updateAudioSliders();
       this.updatePwaInstallState();
+      trackPageView("/ChordFlow/settings", "ChordFlow - Settings");
     });
     document.getElementById("btn-close-settings")?.addEventListener("click", () => {
       if (this.settingsModalEl) this.settingsModalEl.style.display = "none";
@@ -794,6 +834,7 @@ export class UIManager {
     document.getElementById("btn-open-theory")?.addEventListener("click", () => {
       if (this.theoryModalEl) this.theoryModalEl.style.display = "flex";
       circleOfFifths.render();
+      trackPageView("/ChordFlow/theory", "ChordFlow - Music Theory & Circle of Fifths");
     });
     document.getElementById("btn-close-theory")?.addEventListener("click", () => {
       if (this.theoryModalEl) this.theoryModalEl.style.display = "none";
@@ -805,6 +846,8 @@ export class UIManager {
     // Tuner Modal
     document.getElementById("btn-open-tuner")?.addEventListener("click", () => {
       tuner.open();
+      trackPageView("/ChordFlow/tuner", "ChordFlow - Instrument Tuner");
+      trackEvent("tuner_used", { instrument: this.state.activeInstrument });
     });
     document.getElementById("btn-close-tuner")?.addEventListener("click", () => {
       tuner.close();
@@ -816,6 +859,7 @@ export class UIManager {
     // Mobile Library Modal
     document.getElementById("btn-mobile-open-library")?.addEventListener("click", () => {
       this.openMobileLibrary();
+      trackPageView("/ChordFlow/library", "ChordFlow - Chord Library");
     });
     document.getElementById("btn-close-mobile-library")?.addEventListener("click", () => {
       if (this.mobileLibraryModalEl) this.mobileLibraryModalEl.style.display = "none";
@@ -1018,13 +1062,30 @@ export class UIManager {
 
   private bindKeyboardShortcuts(): void {
     window.addEventListener("keydown", (e) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement) return;
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement || e.target instanceof HTMLTextAreaElement) return;
       if (e.repeat) return; // Prevent infinite re-triggering when key is held down
 
       // Escape = Close all open modals
       if (e.code === "Escape") {
         this.closeAllModals();
         return;
+      }
+
+      // Transpose Shortcuts: '+' / '=' / 'NumpadAdd' = Transpose Up (+1), '-' / '_' / 'NumpadSubtract' = Transpose Down (-1)
+      if (e.key === "+" || e.key === "=" || e.code === "NumpadAdd") {
+        if (!e.ctrlKey && !e.metaKey && !e.altKey) {
+          e.preventDefault();
+          this.transposeProgressionBy(1);
+          return;
+        }
+      }
+
+      if (e.key === "-" || e.key === "_" || e.code === "NumpadSubtract") {
+        if (!e.ctrlKey && !e.metaKey && !e.altKey) {
+          e.preventDefault();
+          this.transposeProgressionBy(-1);
+          return;
+        }
       }
 
       // Space = Toggle Play / Pause
@@ -1237,6 +1298,7 @@ export class UIManager {
       this.generatorStyleSearchEl.value = "";
       this.generatorStyleSearchEl.focus();
     }
+    trackPageView("/ChordFlow/styles", "ChordFlow - Progression Styles & Formulas");
   }
 
   public closeGeneratorStylesModal(): void {
@@ -1248,6 +1310,7 @@ export class UIManager {
   public openAboutModal(): void {
     if (this.aboutModalEl) {
       this.aboutModalEl.style.display = "flex";
+      trackPageView("/ChordFlow/about", "ChordFlow - About & Shortcuts");
     }
   }
 
@@ -1474,6 +1537,186 @@ export class UIManager {
       this.renderStrumTicker();
       this.renderStrumEditor();
     }
+
+    trackEvent("generator_used", {
+      style_id: styleObj.id,
+      chord_count: newChords.length.toString(),
+      tempo: targetTempo.toString()
+    });
+  }
+
+  // --- Transposition Methods ---
+
+  public transposeProgressionBy(delta: number): void {
+    if (progression.getIsPlaying()) {
+      progression.stop();
+    }
+
+    const currentChords = progression.getChords();
+    if (currentChords.length === 0) return;
+
+    let missingCount = 0;
+    const transposedChords = currentChords.map(id => {
+      const trans = this.db.transposeChord(id, delta);
+      if (!trans) {
+        missingCount++;
+        return id;
+      }
+      return trans;
+    });
+
+    if (missingCount > 0) {
+      this.showToast(`Warning: ${missingCount} chord(s) not found in library`);
+    }
+
+    const activeIdx = this.state.activeChordIndex;
+
+    // Transpose active selected chord if present
+    if (this.state.selectedChord) {
+      const transSelected = this.db.transposeChord(this.state.selectedChord, delta);
+      if (transSelected) {
+        this.state.selectedChord = transSelected;
+      }
+    }
+
+    // Update state transpose offset (range -12 to +12, wrapping)
+    let currentOffset = this.state.transposeOffset || 0;
+    let newOffset = currentOffset + delta;
+    if (newOffset > 12) newOffset = -12 + (newOffset - 13);
+    else if (newOffset < -12) newOffset = 12 - (-newOffset - 13);
+    this.state.transposeOffset = newOffset;
+
+    try {
+      localStorage.setItem("chordflow-transpose", this.state.transposeOffset.toString());
+    } catch {
+      // Ignore
+    }
+
+    // Update progression title if auto-generated with key
+    const currentTitle = progression.getTitle();
+    const updatedTitle = this.transposeTitleKey(currentTitle, delta);
+    if (updatedTitle !== currentTitle) {
+      progression.setTitle(updatedTitle);
+      if (this.progressionTitleInputEl) {
+        this.progressionTitleInputEl.value = updatedTitle;
+      }
+    }
+
+    // Update progression state with new chord IDs
+    progression.setProgression(transposedChords, progression.getTempo(), progression.getBeatsPerChord(), updatedTitle);
+    if (activeIdx >= 0 && activeIdx < transposedChords.length) {
+      progression.setActiveIndex(activeIdx);
+    }
+
+    this.updateTransposeDisplay();
+    this.renderProgressionCards();
+    this.renderActiveChord();
+    this.updateNextChordIndicator();
+
+    const sign = delta > 0 ? "+" : "";
+    const totalLabel = this.formatTransposeLabel(this.state.transposeOffset);
+    this.showToast(`Transposed ${sign}${delta} semitone (${totalLabel}) 🎵`);
+
+    trackEvent("transpose", {
+      direction: delta > 0 ? "up" : "down",
+      delta,
+      new_offset: this.state.transposeOffset
+    });
+  }
+
+  public resetTranspose(): void {
+    const currentOffset = this.state.transposeOffset || 0;
+    if (currentOffset === 0) {
+      this.showToast("Transposition already at original (0)");
+      return;
+    }
+
+    if (progression.getIsPlaying()) {
+      progression.stop();
+    }
+
+    const currentChords = progression.getChords();
+    const reverseDelta = -currentOffset;
+    const transposedChords = currentChords.map(id => {
+      return this.db.transposeChord(id, reverseDelta) || id;
+    });
+
+    const activeIdx = this.state.activeChordIndex;
+
+    if (this.state.selectedChord) {
+      const transSelected = this.db.transposeChord(this.state.selectedChord, reverseDelta);
+      if (transSelected) {
+        this.state.selectedChord = transSelected;
+      }
+    }
+
+    this.state.transposeOffset = 0;
+    try {
+      localStorage.setItem("chordflow-transpose", "0");
+    } catch {
+      // Ignore
+    }
+
+    // Reset progression title if it had key
+    const currentTitle = progression.getTitle();
+    const updatedTitle = this.transposeTitleKey(currentTitle, reverseDelta);
+    if (updatedTitle !== currentTitle) {
+      progression.setTitle(updatedTitle);
+      if (this.progressionTitleInputEl) {
+        this.progressionTitleInputEl.value = updatedTitle;
+      }
+    }
+
+    progression.setProgression(transposedChords, progression.getTempo(), progression.getBeatsPerChord(), updatedTitle);
+    if (activeIdx >= 0 && activeIdx < transposedChords.length) {
+      progression.setActiveIndex(activeIdx);
+    }
+
+    this.updateTransposeDisplay();
+    this.renderProgressionCards();
+    this.renderActiveChord();
+    this.updateNextChordIndicator();
+
+    this.showToast("Transposition reset to original (0) ↺");
+
+    trackEvent("transpose", {
+      direction: "reset",
+      delta: reverseDelta,
+      new_offset: 0
+    });
+  }
+
+  private formatTransposeLabel(offset: number): string {
+    if (offset > 0) return `+${offset}`;
+    return `${offset}`;
+  }
+
+  public updateTransposeDisplay(): void {
+    if (this.transposeValueDisplayEl) {
+      const offset = this.state.transposeOffset || 0;
+      this.transposeValueDisplayEl.textContent = this.formatTransposeLabel(offset);
+      this.transposeValueDisplayEl.classList.toggle("transposed", offset !== 0);
+    }
+  }
+
+  private transposeTitleKey(title: string, delta: number): string {
+    const regex = /(\bin\s+)([A-G][#b]?)(.*)/i;
+    const match = title.match(regex);
+    if (match) {
+      const prefix = match[1];
+      const root = match[2];
+      const rest = match[3];
+      const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+      const ENHARMONIC: Record<string, string> = { "Db": "C#", "Eb": "D#", "Gb": "F#", "Ab": "G#", "Bb": "A#", "E#": "F", "B#": "C" };
+      const normalized = ENHARMONIC[root] || root;
+      const idx = NOTE_NAMES.indexOf(normalized);
+      if (idx !== -1) {
+        const newIdx = ((idx + delta) % 12 + 12) % 12;
+        const newRoot = NOTE_NAMES[newIdx];
+        return title.replace(regex, `${prefix}${newRoot}${rest}`);
+      }
+    }
+    return title;
   }
 
   // private updateTuningsDropdown(): void {
@@ -1516,6 +1759,7 @@ export class UIManager {
     }
     progression.setMaxChords(mode === "clean" ? 8 : 16);
     this.applyMode(mode);
+    trackEvent("mode_change", { mode });
   }
 
   private applyMode(mode: "clean" | "advanced"): void {
@@ -1597,6 +1841,7 @@ export class UIManager {
     this.updateAudioSliders();
     this.renderActiveChord();
     this.renderProgressionCards();
+    trackEvent("instrument_change", { instrument: inst });
   }
 
   public setDisplayView(view: DisplayView): void {
@@ -2085,6 +2330,12 @@ export class UIManager {
     } else {
       audio.playChord(notes, this.state.activeInstrument, undefined, true, direction);
     }
+
+    trackEvent("play_chord", {
+      chord: chordId,
+      instrument: this.state.activeInstrument,
+      direction
+    });
 
     const btn = document.getElementById("btn-play-active-chord");
     if (btn) {

@@ -187,9 +187,10 @@ export interface AppState {
   audioSettings: Record<string, AudioSettings>;
   toggles: AppToggles;
   theme: "light" | "dark" | "system";
+  transposeOffset: number;
 }
 
-// Global declaration for jsPDF CDN
+// Global declaration for jsPDF CDN and Google Analytics (gtag.js)
 export interface JSPDFInstance {
   setFontSize(size: number): void;
   setTextColor(r: number, g?: number, b?: number): void;
@@ -223,6 +224,9 @@ declare global {
         format?: string | number[];
       }) => JSPDFInstance;
     };
+    dataLayer?: any[];
+    gtag?: (...args: any[]) => void;
   }
 }
+
 
